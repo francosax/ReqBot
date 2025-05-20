@@ -40,7 +40,7 @@ def requirement_bot(path_in, cm_path, words_to_find, path_out):
     # ==================================================================================================================
     return df
 
-# path_in= r"C:/Users/Python/Desktop/Spec_pdf/2023_10_20_Lastenheft_Winder_PAG2_V04_sent.pdf"
+# path_in= r"C:/Users/Python/Desktop/Spec_pdf/2023_10_20_Last.pdf"
 # word_set = {'must', 'shall', 'should', 'has to', 'scope', 'recommended', 'ensuring', 'ensures', 'ensure'}
 #
 # cm_path= r"C:/Users/Python/Desktop/Compliance_Matrix_Template_rev001.xlsx"
