@@ -28,7 +28,7 @@ class RequirementBotApp(QWidget):
         self.worker.finished.connect(self.on_task_finished)
 
     def init_ui(self):
-        self.setWindowTitle('RequirementBot 1.1')
+        self.setWindowTitle('RequirementBot 1.2')
         self.setGeometry(300, 300, 400, 200)
 
         self.folderPath_input = QLineEdit(self)
