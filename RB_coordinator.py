@@ -2,7 +2,7 @@ import os
 import shutil
 from datetime import datetime
 
-from CM_excel_writer import write_excel_file
+from excel_writer import write_excel_file
 from highlight_requirements import highlight_requirements
 from pdf_analyzer import requirement_finder
 
