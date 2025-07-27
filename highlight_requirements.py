@@ -1,6 +1,5 @@
 import fitz
 
-
 def highlight_requirements(filepath, requirements_list, note_list, page_list, out_pdf_name):
     # Funzione per trovare tutte le posizioni di una parola in una lista di parole
     def find_all_positions(word, words):
