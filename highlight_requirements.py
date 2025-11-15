@@ -1,4 +1,8 @@
 import fitz
+import logging
+
+# Phase 1 Improvement: Maximum allowed highlight coverage as percentage of page
+MAX_HIGHLIGHT_COVERAGE_PERCENT = 40
 
 def highlight_requirements(filepath, requirements_list, note_list, page_list, out_pdf_name):
     # Funzione per trovare tutte le posizioni di una parola in una lista di parole
@@ -63,6 +67,34 @@ def highlight_requirements(filepath, requirements_list, note_list, page_list, ou
             # print(str(pagina)+":",str(min_x)+";",str(min_y)+";",str(max_x)+";",str(max_y))
             # Crea il rettangolo di evidenziazione
             highlight_rect = fitz.Rect(min_x, min_y, max_x, max_y)
+
+            # Phase 1 Improvement: Validate highlight size to prevent full-page highlights
+            rect_width = max_x - min_x
+            rect_height = max_y - min_y
+            rect_area = rect_width * rect_height
+
+            # Get page dimensions
+            page_rect = page.rect
+            page_area = page_rect.width * page_rect.height
+
+            # Calculate coverage percentage
+            coverage_percent = (rect_area / page_area) * 100 if page_area > 0 else 0
+
+            # Skip if highlight is unreasonably large (prevents full-page highlights)
+            if coverage_percent > MAX_HIGHLIGHT_COVERAGE_PERCENT:
+                logging.warning(
+                    f"Skipping large highlight on page {pagina+1}: "
+                    f"covers {coverage_percent:.1f}% of page "
+                    f"({len(sentence_parts)} words) - likely extraction error"
+                )
+                # Still add note without highlight for user awareness
+                note_text = note_list[i]
+                point = fitz.Point(
+                    max_x if max_x < page_rect.width - 50 else page_rect.width - 50,
+                    min_y if min_y > 50 else 50
+                )
+                page.add_text_annot(point, note_text, icon="Help")
+                continue
 
             # Aggiungi l'annotazione di evidenziazione alla pagina
             highlight = page.add_highlight_annot(highlight_rect)
