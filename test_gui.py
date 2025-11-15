@@ -9,6 +9,9 @@ from PySide6.QtCore import Qt  # Import Qt directly from QtCore
 # and the class is RequirementBotApp.
 from main_app import RequirementBotApp
 
+# Import version information (single source of truth)
+from version import GUI_VERSION
+
 @pytest.fixture(scope="module")
 def app():
     app = QApplication.instance() or QApplication([])
@@ -28,7 +31,7 @@ def test_initial_state(gui):
     # PySide6's QProgressBar has a default initial value of -1 when no range is set
     # or 0 when setValue(0) is explicitly called. Accept either value as valid initial state.
     assert gui.progressBar.value() in [-1, 0], f"Expected progressBar value to be -1 or 0, got {gui.progressBar.value()}"
-    assert gui.windowTitle() == "RequirementBot 2.0"
+    assert gui.windowTitle() == f"RequirementBot {GUI_VERSION}"
 
 def test_input_folder_field(gui, qtbot, monkeypatch):
     test_path = "/tmp/test_input"

@@ -17,6 +17,9 @@ from PySide6.QtGui import QIcon # For potentially adding icons
 # Import the worker class
 from processing_worker import ProcessingWorker # <--- NEW IMPORT
 
+# Import version information (single source of truth)
+from version import GUI_VERSION
+
 # --- Constants for paths, messages, etc. ---
 CM_TEMPLATE_NAME = 'Compliance_Matrix_Template_rev001.xlsx'
 
@@ -56,7 +59,7 @@ class RequirementBotApp(QWidget):
 
 
     def init_ui(self):
-        self.setWindowTitle('RequirementBot 2.0')
+        self.setWindowTitle(f'RequirementBot {GUI_VERSION}')
         self.resize(800, 600) # Set a more appropriate initial size for the expanded UI
 
         # --- Main Layout ---
