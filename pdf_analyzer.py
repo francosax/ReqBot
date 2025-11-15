@@ -1,10 +1,15 @@
 import logging
+import re
 
 import en_core_web_sm
 import fitz
 import pandas as pd
 
 logging.basicConfig(filename='debug.txt', level=logging.ERROR, format='%(asctime)s - %(levelname)s - %(message)s')
+
+# Phase 1 Improvement: Sentence length validation thresholds
+MIN_REQUIREMENT_LENGTH_WORDS = 5
+MAX_REQUIREMENT_LENGTH_WORDS = 100
 
 
 def requirement_finder(path, keywords_set, filename):
@@ -40,8 +45,25 @@ def requirement_finder(path, keywords_set, filename):
         filtered_text = '\n'.join(lines)
         doc_page = nlp(filtered_text)
         for sent in doc_page.sents:
+            # Phase 1 Improvement: Validate sentence length before processing
+            word_count = len(sent.text.split())
 
-            if any(word.lower() in word_set for word in sent.text.split()):
+            # Skip if too short (likely fragment or heading)
+            if word_count < MIN_REQUIREMENT_LENGTH_WORDS:
+                continue
+
+            # Skip if too long (likely parsing error - prevents full page highlights)
+            if word_count > MAX_REQUIREMENT_LENGTH_WORDS:
+                logging.warning(
+                    f"Skipping overly long sentence on page {i} "
+                    f"({word_count} words) - likely PDF parsing error"
+                )
+                continue
+
+            # Phase 1 Improvement: Use word boundary matching to avoid substring matches
+            # Extract words without punctuation using regex
+            sentence_words = re.findall(r'\b\w+\b', sent.text.lower())
+            if any(word in word_set for word in sentence_words):
                 req_c += 1
                 # raw_sentences.append(sent)
                 raw_sentences.append(sent.text.split())
@@ -49,7 +71,7 @@ def requirement_finder(path, keywords_set, filename):
                 matching_sentences.append(cleaned_sentence)
                 pagine.append(i)
                 # Find the keyword and ensure it's in lowercase
-                keyword_word = next(word.lower() for word in sent.text.split() if word.lower() in word_set)
+                keyword_word = next(word for word in sentence_words if word in word_set)
                 keyword.append(keyword_word)
                 # Create a tag for the requirement
                 tag.append(filename + '-Req#' + str(i) + '-' + str(req_c))
