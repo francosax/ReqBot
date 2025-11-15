@@ -28,7 +28,7 @@ def test_initial_state(gui):
     # PySide6's QProgressBar has a default initial value of -1 when no range is set
     # or 0 when setValue(0) is explicitly called. Accept either value as valid initial state.
     assert gui.progressBar.value() in [-1, 0], f"Expected progressBar value to be -1 or 0, got {gui.progressBar.value()}"
-    assert gui.windowTitle() == "RequirementBot 1.2"
+    assert gui.windowTitle() == "RequirementBot 2.0"
 
 def test_input_folder_field(gui, qtbot, monkeypatch):
     test_path = "/tmp/test_input"

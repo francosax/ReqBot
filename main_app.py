@@ -56,7 +56,7 @@ class RequirementBotApp(QWidget):
 
 
     def init_ui(self):
-        self.setWindowTitle('RequirementBot 1.2')
+        self.setWindowTitle('RequirementBot 2.0')
         self.resize(800, 600) # Set a more appropriate initial size for the expanded UI
 
         # --- Main Layout ---
