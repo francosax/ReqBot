@@ -105,4 +105,20 @@ def highlight_requirements(filepath, requirements_list, note_list, page_list, ou
             point = fitz.Point(max_x, min_y)
             page.add_text_annot(point, note_text)
 
+        else:
+            # Phase 3 Improvement: Fallback when requirement text cannot be found on page
+            # This can happen with reformatted text, special characters, or OCR issues
+            logging.warning(
+                f"Could not find requirement text on page {pagina+1}: "
+                f"{' '.join(sentence_parts[:10])}{'...' if len(sentence_parts) > 10 else ''}"
+            )
+
+            # Add text annotation without highlight so user is still aware
+            note_text = note_list[i]
+            # Place annotation in top-left corner of page
+            page_rect = page.rect
+            point = fitz.Point(50, 50)
+            page.add_text_annot(point, note_text, icon="Note")
+            logging.info(f"Added text-only annotation for requirement on page {pagina+1}")
+
     doc.save(out_pdf_name, encryption=fitz.PDF_ENCRYPT_KEEP)

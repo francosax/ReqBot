@@ -90,6 +90,79 @@ def preprocess_pdf_text(text):
     return '\n'.join(lines)
 
 
+def extract_text_with_layout(page):
+    """
+    Phase 3 Improvement: Extract text from PDF page with better layout awareness.
+
+    Uses block-based extraction to handle multi-column layouts correctly.
+    Ensures text is extracted in proper reading order (top to bottom, left to right).
+
+    Args:
+        page: PyMuPDF page object
+
+    Returns:
+        str: Text extracted in correct reading order
+    """
+    # Get text blocks (better for multi-column layouts)
+    blocks = page.get_text("blocks", sort=True)
+
+    # Sort blocks by vertical position first (top to bottom)
+    # Then by horizontal position (left to right)
+    # This ensures proper reading order even with multiple columns
+    blocks_sorted = sorted(blocks, key=lambda b: (round(b[1] / 10) * 10, b[0]))
+
+    # Extract text from sorted blocks
+    text_parts = []
+    for block in blocks_sorted:
+        if block[6] == 0:  # Type 0 = text block (not image)
+            block_text = block[4]
+            if block_text.strip():
+                text_parts.append(block_text.strip())
+
+    # Double newline between blocks to help sentence segmentation
+    return '\n\n'.join(text_parts)
+
+
+def matches_requirement_pattern(sentence):
+    """
+    Phase 3 Improvement: Check if sentence matches common requirement patterns.
+
+    Beyond just keywords, this function looks for structural patterns
+    that are typical of well-formed requirements.
+
+    Args:
+        sentence (str): The sentence to check
+
+    Returns:
+        bool: True if sentence matches requirement patterns
+    """
+    sentence_lower = sentence.lower()
+
+    # Common requirement patterns
+    REQUIREMENT_PATTERNS = [
+        # Modal verb patterns
+        r'\b(shall|must|should|will)\s+(be|have|provide|support|allow|enable|ensure|include|perform|display|accept|reject|generate|calculate|store|retrieve|validate|verify)',
+
+        # Subject-verb patterns with modal verbs
+        r'\b(the\s+\w+|this\s+\w+|all\s+\w+|each\s+\w+|every\s+\w+)\s+(shall|must|should|will)\b',
+
+        # Capability patterns
+        r'\b(capable\s+of|ability\s+to|required\s+to|responsible\s+for|designed\s+to)\b',
+
+        # Compliance patterns
+        r'\b(comply\s+with|conform\s+to|in\s+accordance\s+with|as\s+specified\s+in|according\s+to)\b',
+
+        # Necessity patterns
+        r'\b(it\s+is\s+(required|necessary|mandatory|essential)|there\s+(shall|must|should)\s+be)\b',
+
+        # Quantified patterns
+        r'\b(at\s+least|no\s+more\s+than|between|within|greater\s+than|less\s+than)\s+\d+\b',
+    ]
+
+    # Check if any pattern matches
+    return any(re.search(pattern, sentence_lower) for pattern in REQUIREMENT_PATTERNS)
+
+
 def calculate_requirement_confidence(sentence, keyword, word_count):
     """
     Phase 2 Improvement: Calculate confidence score for a potential requirement.
@@ -157,6 +230,10 @@ def calculate_requirement_confidence(sentence, keyword, word_count):
     if 'capable of' in sentence_lower or 'ability to' in sentence_lower:
         confidence *= 1.1
 
+    # Phase 3 Improvement: Boost for requirement pattern matching
+    if matches_requirement_pattern(sentence):
+        confidence *= 1.15
+
     # Cap confidence at 1.0
     return min(confidence, 1.0)
 
@@ -170,7 +247,8 @@ def requirement_finder(path, keywords_set, filename):
     keyword = []
 
     for i, page in enumerate(doc, 1):
-        page_text = page.get_text()
+        # Phase 3 Improvement: Use layout-aware extraction for multi-column PDFs
+        page_text = extract_text_with_layout(page)
         # print(text)
         cont_text.append(page_text)
 
