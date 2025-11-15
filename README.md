@@ -3,7 +3,7 @@
 **Automatic Requirements Extraction Tool for PDF Specifications**
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Version](https://img.shields.io/badge/version-2.0.0-brightgreen.svg)](RELEASE_NOTES_v2.0.md)
 
 ReqBot is a powerful desktop application that automatically extracts requirements from PDF specification documents using advanced NLP techniques. It generates compliance matrices in Excel format and creates annotated PDFs with highlighted requirements.
@@ -319,7 +319,9 @@ pytest -v
 
 ## 📝 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
+
+**GPL-3.0**: You are free to use, modify, and distribute this software under the terms of the GPL-3.0 license. Any modifications or derivative works must also be released under GPL-3.0.
 
 ---
 
