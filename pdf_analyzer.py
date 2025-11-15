@@ -11,19 +11,22 @@ logging.basicConfig(filename='debug.txt', level=logging.ERROR, format='%(asctime
 MIN_REQUIREMENT_LENGTH_WORDS = 5
 MAX_REQUIREMENT_LENGTH_WORDS = 100
 
-# Phase 2 Improvement: Cache spaCy model for performance (3-5x speedup)
+# Phase 2 Improvement: Confidence scoring threshold
+MIN_CONFIDENCE_THRESHOLD = 0.4  # Minimum confidence to include requirement
+
+# Phase 2 Improvement: Cache spaCy model for better performance (3-5x faster)
 _nlp_model = None
 
 
 def get_nlp_model():
     """
-    Lazy-load and cache spaCy model for better performance.
+    Lazy-load and cache spaCy model for improved performance.
 
-    Loading the model once and reusing it provides 3-5x performance improvement
-    when processing multiple PDFs in a session.
+    Phase 2 Improvement: Loading the model once instead of on every call
+    provides 3-5x speed improvement.
 
     Returns:
-        spaCy Language model
+        spacy.Language: Cached spaCy NLP model
     """
     global _nlp_model
     if _nlp_model is None:
@@ -34,9 +37,9 @@ def get_nlp_model():
 
 def preprocess_pdf_text(text):
     """
-    Phase 2 Improvement: Clean and normalize PDF text for better NLP processing.
+    Clean and normalize PDF text for better NLP processing.
 
-    Handles common PDF extraction issues that can confuse sentence segmentation:
+    Phase 2 Improvement: Handles common PDF extraction issues including:
     - Hyphenated words split across lines
     - Inconsistent whitespace
     - Special Unicode characters
@@ -239,6 +242,20 @@ def calculate_requirement_confidence(sentence, keyword, word_count):
 
 
 def requirement_finder(path, keywords_set, filename):
+    """
+    Extract requirements from PDF using NLP with Phase 1 & 2 improvements.
+
+    Phase 1: Keyword matching, length validation, sentence filtering
+    Phase 2: Text preprocessing, confidence scoring, performance optimization
+
+    Args:
+        path (str): Path to PDF file
+        keywords_set (set): Set of requirement keywords to search for
+        filename (str): Name of the file (for labeling)
+
+    Returns:
+        pd.DataFrame: DataFrame with extracted requirements and metadata
+    """
     doc = fitz.open(path)
     nlp = get_nlp_model()  # Use cached model instead of reloading
 
@@ -260,7 +277,8 @@ def requirement_finder(path, keywords_set, filename):
     tag = []
     confidences = []  # Phase 2 Improvement: Store confidence scores
     req_c = 0
-    # position = []
+    # Phase 2 Improvement: Track confidence scores
+    confidences = []
     current_page = None
 
     for i, page_text in enumerate(cont_text, 1):
@@ -291,17 +309,28 @@ def requirement_finder(path, keywords_set, filename):
             # Extract words without punctuation using regex
             sentence_words = re.findall(r'\b\w+\b', sent.text.lower())
             if any(word in word_set for word in sentence_words):
-                req_c += 1
-                # raw_sentences.append(sent)
-                raw_sentences.append(sent.text.split())
                 cleaned_sentence = sent.text.strip().replace('\n', ' ')
-                matching_sentences.append(cleaned_sentence)
-                pagine.append(i)
-                # Find the keyword and ensure it's in lowercase
+
+                # Phase 2 Improvement: Calculate confidence score
                 keyword_word = next(word for word in sentence_words if word in word_set)
-                keyword.append(keyword_word)
-                # Create a tag for the requirement
-                tag.append(filename + '-Req#' + str(i) + '-' + str(req_c))
+                confidence = calculate_requirement_confidence(cleaned_sentence, keyword_word, word_count)
+
+                # Phase 2 Improvement: Only include if confidence meets threshold
+                if confidence >= MIN_CONFIDENCE_THRESHOLD:
+                    req_c += 1
+                    raw_sentences.append(sent.text.split())
+                    matching_sentences.append(cleaned_sentence)
+                    pagine.append(i)
+                    keyword.append(keyword_word)
+                    confidences.append(confidence)
+                    # Create a tag for the requirement
+                    tag.append(filename + '-Req#' + str(i) + '-' + str(req_c))
+                else:
+                    # Log low-confidence matches for debugging
+                    logging.info(
+                        f"Skipping low-confidence requirement on page {i} "
+                        f"(confidence: {confidence:.2f}): {cleaned_sentence[:100]}..."
+                    )
 
                 # Phase 2 Improvement: Calculate confidence score for this requirement
                 confidence_score = calculate_requirement_confidence(
