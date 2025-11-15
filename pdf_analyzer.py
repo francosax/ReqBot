@@ -31,12 +31,7 @@ def get_nlp_model():
     global _nlp_model
     if _nlp_model is None:
         _nlp_model = en_core_web_sm.load()
-        # Disable unnecessary components for better performance
-        # We only need sentence segmentation, not NER or full parsing
-        try:
-            _nlp_model.disable_pipes(['ner'])
-        except Exception:
-            pass  # If pipes don't exist, continue
+        logging.info("spaCy model loaded and cached")
     return _nlp_model
 
 
@@ -54,14 +49,14 @@ def preprocess_pdf_text(text):
         text (str): Raw text extracted from PDF
 
     Returns:
-        str: Cleaned and normalized text
+        str: Cleaned and normalized text ready for NLP processing
     """
     # Fix hyphenated words split across lines
     # Example: "require-\nment" -> "requirement"
     text = re.sub(r'(\w+)-\s*\n\s*(\w+)', r'\1\2', text)
 
     # Remove common page number patterns
-    # Matches: "Page 5", "- 5 -", standalone numbers at start/end of lines
+    # Matches: "Page 5", "- 5 -", "5", etc. at start/end of lines
     text = re.sub(r'^\s*[-–—]?\s*\d+\s*[-–—]?\s*$', '', text, flags=re.MULTILINE)
     text = re.sub(r'^\s*Page\s+\d+\s*$', '', text, flags=re.MULTILINE | re.IGNORECASE)
 
@@ -82,7 +77,7 @@ def preprocess_pdf_text(text):
     text = text.replace('\u201c', '"')   # Left double quote
     text = text.replace('\u201d', '"')   # Right double quote
 
-    # Remove multiple spaces
+    # Remove multiple spaces (but keep single spaces)
     text = re.sub(r' +', ' ', text)
 
     # Remove multiple newlines (but keep paragraph breaks)
@@ -98,22 +93,92 @@ def preprocess_pdf_text(text):
     return '\n'.join(lines)
 
 
-def calculate_requirement_confidence(sentence, keyword, word_count):
+def extract_text_with_layout(page):
     """
-    Calculate confidence score for a potential requirement.
+    Phase 3 Improvement: Extract text from PDF page with better layout awareness.
 
-    Phase 2 Improvement: Provides quality scoring to help identify
-    high-confidence requirements and filter out low-quality matches.
-
-    Factors considered:
-    - Sentence length (optimal: 8-50 words)
-    - Multiple requirement keywords present
-    - Requirement sentence patterns
-    - Header-like formatting
-    - Excessive numbers (likely table data)
+    Uses block-based extraction to handle multi-column layouts correctly.
+    Ensures text is extracted in proper reading order (top to bottom, left to right).
 
     Args:
-        sentence (str): The candidate requirement sentence
+        page: PyMuPDF page object
+
+    Returns:
+        str: Text extracted in correct reading order
+    """
+    # Get text blocks (better for multi-column layouts)
+    blocks = page.get_text("blocks", sort=True)
+
+    # Sort blocks by vertical position first (top to bottom)
+    # Then by horizontal position (left to right)
+    # This ensures proper reading order even with multiple columns
+    blocks_sorted = sorted(blocks, key=lambda b: (round(b[1] / 10) * 10, b[0]))
+
+    # Extract text from sorted blocks
+    text_parts = []
+    for block in blocks_sorted:
+        if block[6] == 0:  # Type 0 = text block (not image)
+            block_text = block[4]
+            if block_text.strip():
+                text_parts.append(block_text.strip())
+
+    # Double newline between blocks to help sentence segmentation
+    return '\n\n'.join(text_parts)
+
+
+def matches_requirement_pattern(sentence):
+    """
+    Phase 3 Improvement: Check if sentence matches common requirement patterns.
+
+    Beyond just keywords, this function looks for structural patterns
+    that are typical of well-formed requirements.
+
+    Args:
+        sentence (str): The sentence to check
+
+    Returns:
+        bool: True if sentence matches requirement patterns
+    """
+    sentence_lower = sentence.lower()
+
+    # Common requirement patterns
+    REQUIREMENT_PATTERNS = [
+        # Modal verb patterns
+        r'\b(shall|must|should|will)\s+(be|have|provide|support|allow|enable|ensure|include|perform|display|accept|reject|generate|calculate|store|retrieve|validate|verify)',
+
+        # Subject-verb patterns with modal verbs
+        r'\b(the\s+\w+|this\s+\w+|all\s+\w+|each\s+\w+|every\s+\w+)\s+(shall|must|should|will)\b',
+
+        # Capability patterns
+        r'\b(capable\s+of|ability\s+to|required\s+to|responsible\s+for|designed\s+to)\b',
+
+        # Compliance patterns
+        r'\b(comply\s+with|conform\s+to|in\s+accordance\s+with|as\s+specified\s+in|according\s+to)\b',
+
+        # Necessity patterns
+        r'\b(it\s+is\s+(required|necessary|mandatory|essential)|there\s+(shall|must|should)\s+be)\b',
+
+        # Quantified patterns
+        r'\b(at\s+least|no\s+more\s+than|between|within|greater\s+than|less\s+than)\s+\d+\b',
+    ]
+
+    # Check if any pattern matches
+    return any(re.search(pattern, sentence_lower) for pattern in REQUIREMENT_PATTERNS)
+
+
+def calculate_requirement_confidence(sentence, keyword, word_count):
+    """
+    Phase 2 Improvement: Calculate confidence score for a potential requirement.
+
+    Uses multiple factors to assess the quality of an extracted requirement:
+    - Sentence length (optimal: 8-50 words)
+    - Presence of multiple requirement keywords
+    - Common requirement sentence patterns
+    - Header detection (penalized)
+    - High number density (penalized, might be table data)
+
+    Args:
+        sentence (str): The extracted sentence text
         keyword (str): The keyword that triggered the match
         word_count (int): Number of words in the sentence
 
@@ -134,69 +199,46 @@ def calculate_requirement_confidence(sentence, keyword, word_count):
     elif 50 < word_count <= 80:
         confidence *= 0.8  # Long but acceptable
     else:  # > 80 words
-        confidence *= 0.5  # Very long, possibly error
+        confidence *= 0.5  # Very long, lower confidence
 
     # Factor 2: Multiple requirement keywords (higher confidence)
-    requirement_keywords = ['shall', 'must', 'should', 'will', 'has to', 'required']
+    requirement_keywords = ['shall', 'must', 'should', 'will', 'has to', 'required', 'ensure']
     keyword_count = sum(1 for kw in requirement_keywords if kw in sentence_lower)
     if keyword_count >= 2:
         confidence *= 1.2
+    elif keyword_count >= 3:
+        confidence *= 1.3
 
     # Factor 3: Requirement sentence patterns
     # Common patterns: "The system shall...", "X must...", etc.
-    if re.match(r'^(the|this|that|each|all|every|a|an)\s+\w+\s+(shall|must|should|will)',
+    if re.match(r'^(the|this|that|each|all|every|a)\s+\w+\s+(shall|must|should|will)',
                 sentence_lower):
-        confidence *= 1.3
+        confidence *= 1.2
 
-    # Factor 4: Penalize sentences that look like headers (all caps or very short)
+    # Factor 4: Penalize sentences that look like headers
+    # Headers are often all caps or very short
     if sentence.isupper() and word_count <= 6:
         confidence *= 0.4
+    elif word_count <= 3:
+        confidence *= 0.5
 
     # Factor 5: Penalize sentences with lots of numbers (might be table data)
     numbers = re.findall(r'\d+', sentence)
     if len(numbers) > word_count * 0.3:  # More than 30% numbers
-        confidence *= 0.7
+        confidence *= 0.6
 
-    # Factor 6: Boost if contains action verbs common in requirements
-    action_verbs = ['provide', 'support', 'ensure', 'allow', 'enable', 'include',
-                    'implement', 'process', 'handle', 'manage', 'control']
-    if any(verb in sentence_lower for verb in action_verbs):
+    # Factor 6: Boost for specific requirement indicators
+    if 'comply with' in sentence_lower or 'conform to' in sentence_lower:
         confidence *= 1.1
+    if 'capable of' in sentence_lower or 'ability to' in sentence_lower:
+        confidence *= 1.1
+
+    # Phase 3 Improvement: Boost for requirement pattern matching
+    if matches_requirement_pattern(sentence):
+        confidence *= 1.15
 
     # Cap confidence at 1.0
     return min(confidence, 1.0)
-
-
-def extract_text_with_layout(page):
-    """
-    Extract text from PDF page with better layout awareness.
-
-    Phase 2 Improvement: Better handling of multi-column layouts and
-    complex page structures by using PyMuPDF's block-based extraction.
-
-    Args:
-        page: PyMuPDF page object
-
-    Returns:
-        str: Text extracted in proper reading order
-    """
-    # Get text blocks (better for multi-column layouts)
-    blocks = page.get_text("blocks", sort=True)
-
-    # Sort blocks by vertical position first (top to bottom)
-    # Then by horizontal position (left to right)
-    blocks_sorted = sorted(blocks, key=lambda b: (b[1], b[0]))
-
-    # Extract text from sorted blocks
-    text_parts = []
-    for block in blocks_sorted:
-        if block[6] == 0:  # Type 0 = text block (not image)
-            block_text = block[4]
-            if block_text.strip():
-                text_parts.append(block_text)
-
-    # Double newline between blocks to help spaCy detect paragraph boundaries
-    return '\n\n'.join(text_parts)
 
 
 def requirement_finder(path, keywords_set, filename):
@@ -215,16 +257,16 @@ def requirement_finder(path, keywords_set, filename):
         pd.DataFrame: DataFrame with extracted requirements and metadata
     """
     doc = fitz.open(path)
-    # Phase 2 Improvement: Use cached spaCy model (3-5x faster)
-    nlp = get_nlp_model()
+    nlp = get_nlp_model()  # Use cached model instead of reloading
 
     cont_text = []
     pagine = []
     keyword = []
 
     for i, page in enumerate(doc, 1):
-        # Phase 2 Improvement: Better multi-column layout handling
+        # Phase 3 Improvement: Use layout-aware extraction for multi-column PDFs
         page_text = extract_text_with_layout(page)
+        # print(text)
         cont_text.append(page_text)
 
     # word_set = keywords_set
@@ -233,6 +275,7 @@ def requirement_finder(path, keywords_set, filename):
     raw_sentences = []
     matching_sentences = []
     tag = []
+    confidences = []  # Phase 2 Improvement: Store confidence scores
     req_c = 0
     # Phase 2 Improvement: Track confidence scores
     confidences = []
@@ -243,7 +286,7 @@ def requirement_finder(path, keywords_set, filename):
             req_c = 0
             current_page = i
 
-        # Phase 2 Improvement: Use advanced text preprocessing
+        # Phase 2 Improvement: Use enhanced preprocessing instead of simple line filtering
         filtered_text = preprocess_pdf_text(page_text)
         doc_page = nlp(filtered_text)
         for sent in doc_page.sents:
@@ -289,14 +332,22 @@ def requirement_finder(path, keywords_set, filename):
                         f"(confidence: {confidence:.2f}): {cleaned_sentence[:100]}..."
                     )
 
-    # Phase 2 Improvement: Add confidence scores to DataFrame
+                # Phase 2 Improvement: Calculate confidence score for this requirement
+                confidence_score = calculate_requirement_confidence(
+                    cleaned_sentence,
+                    keyword_word,
+                    word_count
+                )
+                confidences.append(confidence_score)
+
     df = pd.DataFrame({
         'Label Number': tag,
         'Description': matching_sentences,
         'Page': pagine,
         'Keyword': keyword,
         'Raw': raw_sentences,
-        'Confidence': confidences  # Phase 2: Confidence scoring
+        'Confidence': confidences  # Phase 2 Improvement: Confidence scores for quality assessment
+        # 'position_for_note': position
     })
 
     df['Priority'] = df['Description'].apply(lambda x: 'high' if 'must' in x.lower() or 'shall' in x.lower()
