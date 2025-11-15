@@ -1,0 +1,10 @@
+Keyword: recommended, ensures, must, scope, ensuring, ensure, shall, should, has to
+
+PDF Name: Template_based_on_IEEE_Std_830_1998_for.pdf
+Number of Requirements: 36
+Estimated Analysis time: 3.0 hrs
+Execution Time: 2.1832 seconds
+
+--- Summary ---
+Total Requirements: 36
+Total Estimated Analysis time: 3.0 hrs
