@@ -1,10 +1,14 @@
 import os
 import shutil
+import logging
 from datetime import datetime
 
 from excel_writer import write_excel_file
 from highlight_requirements import highlight_requirements
 from pdf_analyzer import requirement_finder
+from basil_integration import export_to_basil
+
+logger = logging.getLogger(__name__)
 
 
 def requirement_bot(path_in, cm_path, words_to_find, path_out):
@@ -31,6 +35,24 @@ def requirement_bot(path_in, cm_path, words_to_find, path_out):
     shutil.copy2(path_cm, new_cm)
 
     write_excel_file(df=df, excel_file=new_cm)
+
+    # ==================================================================================================================
+    # ========================= GESTIONE EXPORT BASIL SPDX 3.0.1 ======================================================
+    basil_output = os.path.join(path_out, formatted_date + '_BASIL_Export_' + filename + '.jsonld')
+    try:
+        export_success = export_to_basil(
+            df=df,
+            output_path=basil_output,
+            created_by='ReqBot',
+            document_name=f'Requirements from {filename}'
+        )
+        if export_success:
+            logger.info(f"BASIL export created: {basil_output}")
+        else:
+            logger.warning(f"BASIL export failed for {filename}")
+    except Exception as e:
+        logger.error(f"Error during BASIL export for {filename}: {str(e)}")
+        # Continue processing even if BASIL export fails
 
     # ==================================================================================================================
     # ========================= GESTIONE DEGLI HIGHLIGHT E NOTE DEL PDF ================================================

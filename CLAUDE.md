@@ -622,7 +622,7 @@ ReqBot follows a **three-layer architecture**:
 
 ---
 
-### RB_coordinator.py (49 lines)
+### RB_coordinator.py (~72 lines)
 **Purpose**: Orchestrates the main processing pipeline
 
 **Key Function**: `requirement_bot(path_in, cm_path, words_to_find, path_out)`
@@ -630,17 +630,24 @@ ReqBot follows a **three-layer architecture**:
 **Pipeline Steps**:
 1. **Extract**: Call `pdf_analyzer.requirement_finder()`
 2. **Generate Excel**: Copy template and call `excel_writer.write_excel_file()`
-3. **Annotate PDF**: Call `highlight_requirements.highlight_requirements()`
+3. **Export BASIL**: Call `basil_integration.export_to_basil()` ⭐ *NEW!*
+4. **Annotate PDF**: Call `highlight_requirements.highlight_requirements()`
 
 **Output Naming Convention**:
 ```
 Format: YYYY.MM.DD_[Type]_[OriginalFilename].ext
 Examples:
-- 2025.11.15_Compliance Matrix_spec.xlsx
-- 2025.11.15_Tagged_spec.pdf
+- 2025.11.17_Compliance Matrix_spec.xlsx
+- 2025.11.17_BASIL_Export_spec.jsonld ⭐ NEW
+- 2025.11.17_Tagged_spec.pdf
 ```
 
-**AI Assistant Note**: This is the central coordination point. Modifications to the processing workflow should start here.
+**Error Handling**:
+- BASIL export wrapped in try-except block
+- Workflow continues even if BASIL export fails
+- All operations logged (info, warning, error)
+
+**AI Assistant Note**: This is the central coordination point. BASIL export is now automatically generated alongside Excel and PDF outputs.
 
 ---
 
@@ -902,6 +909,10 @@ FOR EACH PDF:
     │    │    └─→ Add data, colors, validations, formulas
     │    │    └─→ Save: YYYY.MM.DD_Compliance Matrix_file.xlsx
     │    │
+    │    ├─→ [basil_integration.py] ⭐ NEW
+    │    │    └─→ Convert DataFrame to SPDX 3.0.1
+    │    │    └─→ Save: YYYY.MM.DD_BASIL_Export_file.jsonld
+    │    │
     │    └─→ [highlight_requirements.py]
     │         └─→ Add highlights and annotations
     │         └─→ Save: YYYY.MM.DD_Tagged_file.pdf
@@ -911,6 +922,7 @@ FOR EACH PDF:
 
 Final Output:
 ├─ Multiple *.xlsx (Compliance Matrices)
+├─ Multiple *.jsonld (BASIL SPDX Exports) ⭐ NEW
 ├─ Multiple *.pdf (Tagged PDFs)
 └─ LOG.txt (Summary)
 ```
