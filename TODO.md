@@ -29,19 +29,23 @@ This document tracks future enhancements, feature requests, and improvements for
 
 ### Features
 
-- [ ] **Display Confidence Scores in Excel Output**
+- [x] **Display Confidence Scores in Excel Output** ✅ **COMPLETED**
   - Priority: High
   - Effort: 2-3 hours
-  - Add conditional formatting (green/yellow/red) based on confidence
-  - Add filter for low-confidence requirements (<0.6)
+  - ✅ Add conditional formatting (green/yellow/red) based on confidence
+  - ✅ Add filter for low-confidence requirements (<0.6)
   - Location: `excel_writer.py`
+  - **Implementation Date**: 2025-11-17
+  - **Details**: Confidence scores now displayed in column E with color coding (Green ≥0.8, Yellow 0.6-0.8, Red <0.6) and auto-filter enabled
 
-- [ ] **User-Adjustable Confidence Threshold in GUI**
+- [x] **User-Adjustable Confidence Threshold in GUI** ✅ **COMPLETED**
   - Priority: High
   - Effort: 3-4 hours
-  - Add slider/spinbox in GUI for minimum confidence (default: 0.5)
-  - Filter requirements below threshold
-  - Location: `main_app.py`
+  - ✅ Add slider/spinbox in GUI for minimum confidence (default: 0.5)
+  - ✅ Filter requirements below threshold
+  - Location: `main_app.py`, `processing_worker.py`, `RB_coordinator.py`, `pdf_analyzer.py`
+  - **Implementation Date**: 2025-11-17
+  - **Details**: Added interactive slider and spinbox controls in GUI for real-time confidence threshold adjustment. Default value: 0.5 (50%). Range: 0.0-1.0. Requirements below threshold are filtered during extraction.
 
 - [ ] **Export Processing Report**
   - Priority: Medium
@@ -50,12 +54,15 @@ This document tracks future enhancements, feature requests, and improvements for
   - Include: total requirements, avg confidence, warnings, errors
   - Location: New file `report_generator.py`
 
-- [ ] **Recent Files/Projects**
+- [x] **Recent Files/Projects** ✅ **COMPLETED**
   - Priority: Medium
   - Effort: 2-3 hours
-  - Remember last 5 input/output folders
-  - Add dropdown or menu for quick access
-  - Store in config file or settings
+  - ✅ Remember last 5 input/output folders
+  - ✅ Add dropdown or menu for quick access
+  - ✅ Store in config file (JSON)
+  - Location: `recent_projects.py`, `main_app.py`
+  - **Implementation Date**: 2025-11-17
+  - **Details**: QComboBox dropdowns show last 5 recent paths for input folders, output folders, and compliance matrix files. Paths saved to recents_config.json automatically when processing starts. Non-existent paths automatically filtered from dropdown. Singleton pattern for global access.
 
 ### Bug Fixes
 

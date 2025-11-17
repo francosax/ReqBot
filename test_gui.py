@@ -25,9 +25,10 @@ def gui(app):
     gui.close()
 
 def test_initial_state(gui):
-    assert gui.folderPath_input.text() == ""
-    assert gui.folderPath_output.text() == ""
-    assert gui.CM_path.text() == ""
+    # NEW: Use currentText() for QComboBox widgets
+    assert gui.folderPath_input.currentText() == ""
+    assert gui.folderPath_output.currentText() == ""
+    assert gui.CM_path.currentText() == ""
     # PySide6's QProgressBar has a default initial value of -1 when no range is set
     # or 0 when setValue(0) is explicitly called. Accept either value as valid initial state.
     assert gui.progressBar.value() in [-1, 0], f"Expected progressBar value to be -1 or 0, got {gui.progressBar.value()}"
@@ -42,7 +43,8 @@ def test_input_folder_field(gui, qtbot, monkeypatch):
     assert len(browse_buttons) >= 1, "Could not find Browse button for input folder"
     qtbot.mouseClick(browse_buttons[0], Qt.LeftButton)
     # Compare normalized paths (main_app.py uses os.path.normpath)
-    assert gui.folderPath_input.text() == os.path.normpath(test_path)
+    # NEW: Use currentText() for QComboBox widgets
+    assert gui.folderPath_input.currentText() == os.path.normpath(test_path)
 
 def test_output_folder_field(gui, qtbot, monkeypatch):
     test_path = "/tmp/test_output"
@@ -53,7 +55,8 @@ def test_output_folder_field(gui, qtbot, monkeypatch):
     assert len(browse_buttons) >= 2, "Could not find Browse button for output folder"
     qtbot.mouseClick(browse_buttons[1], Qt.LeftButton)
     # Compare normalized paths (main_app.py uses os.path.normpath)
-    assert gui.folderPath_output.text() == os.path.normpath(test_path)
+    # NEW: Use currentText() for QComboBox widgets
+    assert gui.folderPath_output.currentText() == os.path.normpath(test_path)
 
 def test_cm_file_field(gui, qtbot, monkeypatch):
     test_file = "/tmp/cm.xlsx"
@@ -64,7 +67,8 @@ def test_cm_file_field(gui, qtbot, monkeypatch):
     assert len(browse_buttons) >= 3, "Could not find Browse button for compliance matrix"
     qtbot.mouseClick(browse_buttons[2], Qt.LeftButton)
     # Compare normalized paths (main_app.py uses os.path.normpath)
-    assert gui.CM_path.text() == os.path.normpath(test_file)
+    # NEW: Use currentText() for QComboBox widgets
+    assert gui.CM_path.currentText() == os.path.normpath(test_file)
 
 def test_progress_bar_updates(gui):
     # Test that the progress bar can be updated

@@ -11,7 +11,20 @@ from basil_integration import export_to_basil
 logger = logging.getLogger(__name__)
 
 
-def requirement_bot(path_in, cm_path, words_to_find, path_out):
+def requirement_bot(path_in, cm_path, words_to_find, path_out, confidence_threshold=0.5):
+    """
+    Main orchestration function for requirement extraction and processing.
+
+    Args:
+        path_in: Path to input PDF file
+        cm_path: Path to compliance matrix template
+        words_to_find: Set of keywords to find
+        path_out: Output directory path
+        confidence_threshold: Minimum confidence threshold for requirements (default: 0.5)
+
+    Returns:
+        DataFrame with extracted requirements
+    """
     # Ottieni data corrente
     current_date = datetime.today()
     formatted_date = current_date.strftime('%Y.%m.%d')
@@ -22,7 +35,7 @@ def requirement_bot(path_in, cm_path, words_to_find, path_out):
     #folder_path = os.path.dirname(filename_path)
 
     # ========================= ALGORITMO PER TROVARE I REQUISITI =====================================================
-    df = requirement_finder(path_in, words_to_find, filename)
+    df = requirement_finder(path_in, words_to_find, filename, confidence_threshold)
 
     # ==================================================================================================================
     # ========================= GESTIONE DELLA COMPLIANCE MATRIX ======================================================

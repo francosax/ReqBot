@@ -32,11 +32,12 @@ def empty_compliance_matrix_template():
     matrix_sheet['B1'] = "Page"
     matrix_sheet['C1'] = "Label Number"
     matrix_sheet['D1'] = "Description"
-    matrix_sheet['H1'] = "Priority"
-    matrix_sheet['M1'] = "Status"
-    matrix_sheet['N1'] = "Completeness"
-    matrix_sheet['O1'] = "Difficulty"
-    matrix_sheet['P1'] = "Calculated Value"
+    matrix_sheet['E1'] = "Confidence"  # NEW: Confidence header
+    matrix_sheet['I1'] = "Priority"  # SHIFTED from H to I
+    matrix_sheet['N1'] = "Status"  # SHIFTED from M to N
+    matrix_sheet['O1'] = "Completeness"  # SHIFTED from N to O
+    matrix_sheet['P1'] = "Difficulty"  # SHIFTED from O to P
+    matrix_sheet['Q1'] = "Calculated Value"  # SHIFTED from P to Q
 
     book.save(path)
     yield path  # Provide the path to the test
@@ -53,7 +54,8 @@ def test_write_excel_file_data_and_priority_fills(empty_compliance_matrix_templa
         'Page': [1, 2, 3],
         'Label Number': ['L001', 'L002', 'L003'],
         'Description': ['Req 1', 'Req 2', 'Req 3'],
-        'Priority': ['high', 'medium', 'low']
+        'Priority': ['high', 'medium', 'low'],
+        'Confidence': [0.95, 0.72, 0.55]  # NEW: Confidence scores
     }
     df = pd.DataFrame(data, index=['REQ-A', 'REQ-B', 'REQ-C'])
 
@@ -66,15 +68,15 @@ def test_write_excel_file_data_and_priority_fills(empty_compliance_matrix_templa
     # Assert data written
     assert writer['A5'].value == 'REQ-A'
     assert writer['B5'].value == 1
-    assert writer['H5'].value == 'high'
+    assert writer['I5'].value == 'high'  # SHIFTED from H to I
 
     assert writer['A6'].value == 'REQ-B'
     assert writer['B6'].value == 2
-    assert writer['H6'].value == 'medium'
+    assert writer['I6'].value == 'medium'  # SHIFTED from H to I
 
     assert writer['A7'].value == 'REQ-C'
     assert writer['B7'].value == 3
-    assert writer['H7'].value == 'low'
+    assert writer['I7'].value == 'low'  # SHIFTED from H to I
 
     # Assert fill colors
     # Hexadecimal values for colors without alpha channel (AARRGGBB -> RRGGBB)
@@ -83,9 +85,9 @@ def test_write_excel_file_data_and_priority_fills(empty_compliance_matrix_templa
     fill_low_rgb = Color(rgb='00FF00')  # Green
 
     # Compare fill objects' start_color.rgb
-    assert writer['H5'].fill.start_color.rgb == fill_high_rgb.rgb
-    assert writer['H6'].fill.start_color.rgb == fill_medium_rgb.rgb
-    assert writer['H7'].fill.start_color.rgb == fill_low_rgb.rgb
+    assert writer['I5'].fill.start_color.rgb == fill_high_rgb.rgb  # SHIFTED from H to I
+    assert writer['I6'].fill.start_color.rgb == fill_medium_rgb.rgb  # SHIFTED from H to I
+    assert writer['I7'].fill.start_color.rgb == fill_low_rgb.rgb  # SHIFTED from H to I
 
     book.close()
 
@@ -99,7 +101,7 @@ def test_write_excel_file_data_validations(empty_compliance_matrix_template):
     excel_file = empty_compliance_matrix_template
 
     data = {  # Minimal data just to get the function to run
-        'Page': [1], 'Label Number': ['L001'], 'Description': ['Desc'], 'Priority': ['high']
+        'Page': [1], 'Label Number': ['L001'], 'Description': ['Desc'], 'Priority': ['high'], 'Confidence': [0.85]
     }
     df = pd.DataFrame(data, index=['REQ-X'])
 
@@ -126,7 +128,8 @@ def test_write_excel_file_formulas(empty_compliance_matrix_template):
         'Page': [1, 2],
         'Label Number': ['L001', 'L002'],
         'Description': ['Req 1', 'Req 2'],
-        'Priority': ['high', 'low']
+        'Priority': ['high', 'low'],
+        'Confidence': [0.92, 0.68]  # NEW: Confidence scores
     }
     df = pd.DataFrame(data, index=['REQ-A', 'REQ-B'])
 
@@ -135,16 +138,97 @@ def test_write_excel_file_formulas(empty_compliance_matrix_template):
     book = load_workbook(excel_file)
     writer = book['MACHINE COMP. MATRIX']
 
-    # Expected column 'P' (16th column) starting from row 5
-    col_p = get_column_letter(16)
+    # Expected column 'Q' (17th column) starting from row 5 - SHIFTED from P (16)
+    col_q = get_column_letter(17)
 
     # Check that a formula string is present
-    assert writer[f'{col_p}5'].value is not None
-    assert writer[f'{col_p}5'].value.startswith('=ROUND(((')
-    assert writer[f'{col_p}6'].value is not None
-    assert writer[f'{col_p}6'].value.startswith('=ROUND(((')
+    assert writer[f'{col_q}5'].value is not None
+    assert writer[f'{col_q}5'].value.startswith('=ROUND(((')
+    assert writer[f'{col_q}6'].value is not None
+    assert writer[f'{col_q}6'].value.startswith('=ROUND(((')
 
     # Check number format
-    assert writer[f'{col_p}5'].number_format == '0'
+    assert writer[f'{col_q}5'].number_format == '0'
+
+    book.close()
+
+
+def test_write_excel_file_confidence_display_and_formatting(empty_compliance_matrix_template):
+    """
+    Tests if confidence scores are written correctly with proper conditional formatting.
+    Tests color coding: Green (≥0.8), Yellow (0.6-0.8), Red (<0.6)
+    """
+    excel_file = empty_compliance_matrix_template
+
+    data = {
+        'Page': [1, 2, 3],
+        'Label Number': ['L001', 'L002', 'L003'],
+        'Description': ['High conf req', 'Medium conf req', 'Low conf req'],
+        'Priority': ['high', 'medium', 'low'],
+        'Confidence': [0.95, 0.72, 0.55]  # High, Medium, Low confidence
+    }
+    df = pd.DataFrame(data, index=['REQ-A', 'REQ-B', 'REQ-C'])
+
+    write_excel_file(df, excel_file)
+
+    # Load the updated workbook to assert changes
+    book = load_workbook(excel_file)
+    writer = book['MACHINE COMP. MATRIX']
+
+    # Assert confidence values are written
+    assert writer['E5'].value == 0.95
+    assert writer['E6'].value == 0.72
+    assert writer['E7'].value == 0.55
+
+    # Assert number format is set to decimal
+    assert writer['E5'].number_format == '0.00'
+    assert writer['E6'].number_format == '0.00'
+    assert writer['E7'].number_format == '0.00'
+
+    # Assert fill colors for confidence
+    # High confidence (≥0.8): Green
+    fill_conf_high_rgb = Color(rgb='00FF00')  # Green
+    assert writer['E5'].fill.start_color.rgb == fill_conf_high_rgb.rgb
+
+    # Medium confidence (0.6-0.8): Yellow
+    fill_conf_medium_rgb = Color(rgb='FFFF00')  # Yellow
+    assert writer['E6'].fill.start_color.rgb == fill_conf_medium_rgb.rgb
+
+    # Low confidence (<0.6): Red
+    fill_conf_low_rgb = Color(rgb='FF0000')  # Red
+    assert writer['E7'].fill.start_color.rgb == fill_conf_low_rgb.rgb
+
+    book.close()
+
+
+def test_write_excel_file_auto_filter(empty_compliance_matrix_template):
+    """
+    Tests if auto-filter is applied to allow filtering requirements.
+    """
+    excel_file = empty_compliance_matrix_template
+
+    data = {
+        'Page': [1, 2, 3],
+        'Label Number': ['L001', 'L002', 'L003'],
+        'Description': ['Req 1', 'Req 2', 'Req 3'],
+        'Priority': ['high', 'medium', 'low'],
+        'Confidence': [0.95, 0.72, 0.55]
+    }
+    df = pd.DataFrame(data, index=['REQ-A', 'REQ-B', 'REQ-C'])
+
+    write_excel_file(df, excel_file)
+
+    book = load_workbook(excel_file)
+    writer = book['MACHINE COMP. MATRIX']
+
+    # Assert that auto-filter is applied
+    assert writer.auto_filter is not None
+    assert writer.auto_filter.ref is not None
+
+    # Verify auto-filter starts at row 4 (header row)
+    assert 'A4' in writer.auto_filter.ref
+
+    # Verify auto-filter includes data rows
+    assert '7' in writer.auto_filter.ref  # Should include row 7 (last data row)
 
     book.close()

@@ -19,11 +19,12 @@ class ProcessingWorker(QObject):
     finished = Signal(str) # Message on successful completion
     error_occurred = Signal(str, str) # Error message, title for MessageBox
 
-    def __init__(self, folder_input, folder_output, CM_file):
+    def __init__(self, folder_input, folder_output, CM_file, confidence_threshold=0.5):
         super().__init__()
         self._folder_input = folder_input
         self._folder_output = folder_output
         self._CM_file = CM_file
+        self._confidence_threshold = confidence_threshold  # Store confidence threshold
         self._is_running = True
 
     def run(self):
@@ -32,6 +33,7 @@ class ProcessingWorker(QObject):
         Contains the core 'do_stuff' logic.
         """
         self.log_message.emit("Processing started...", "info")
+        self.log_message.emit(f"Confidence threshold: {self._confidence_threshold:.2f}", "info")
         try:
             parole_chiave = load_keyword_config()
             self.log_message.emit(f"Keywords loaded: {', '.join(parole_chiave)}", "info")
@@ -64,7 +66,7 @@ class ProcessingWorker(QObject):
                     start_time = datetime.now()
                     try:
                         self.log_message.emit(f"Processing PDF: {os.path.basename(file_path)}", "info")
-                        df = requirement_bot(file_path, self._CM_file, parole_chiave, self._folder_output)
+                        df = requirement_bot(file_path, self._CM_file, parole_chiave, self._folder_output, self._confidence_threshold)
                         self.log_message.emit(f"Processed {os.path.basename(file_path)}. Found {len(df)} requirements.", "info")
 
                     except Exception as e:

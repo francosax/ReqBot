@@ -241,7 +241,7 @@ def calculate_requirement_confidence(sentence, keyword, word_count):
     return min(confidence, 1.0)
 
 
-def requirement_finder(path, keywords_set, filename):
+def requirement_finder(path, keywords_set, filename, confidence_threshold=0.5):
     """
     Extract requirements from PDF using NLP with Phase 1 & 2 improvements.
 
@@ -252,6 +252,7 @@ def requirement_finder(path, keywords_set, filename):
         path (str): Path to PDF file
         keywords_set (set): Set of requirement keywords to search for
         filename (str): Name of the file (for labeling)
+        confidence_threshold (float): Minimum confidence threshold (default: 0.5)
 
     Returns:
         pd.DataFrame: DataFrame with extracted requirements and metadata
@@ -315,8 +316,8 @@ def requirement_finder(path, keywords_set, filename):
                 keyword_word = next(word for word in sentence_words if word in word_set)
                 confidence = calculate_requirement_confidence(cleaned_sentence, keyword_word, word_count)
 
-                # Phase 2 Improvement: Only include if confidence meets threshold
-                if confidence >= MIN_CONFIDENCE_THRESHOLD:
+                # Phase 2 Improvement: Only include if confidence meets threshold (user-adjustable)
+                if confidence >= confidence_threshold:
                     req_c += 1
                     raw_sentences.append(sent.text.split())
                     matching_sentences.append(cleaned_sentence)
@@ -329,7 +330,7 @@ def requirement_finder(path, keywords_set, filename):
                     # Log low-confidence matches for debugging
                     logging.info(
                         f"Skipping low-confidence requirement on page {i} "
-                        f"(confidence: {confidence:.2f}): {cleaned_sentence[:100]}..."
+                        f"(confidence: {confidence:.2f}, threshold: {confidence_threshold:.2f}): {cleaned_sentence[:100]}..."
                     )
 
     df = pd.DataFrame({
