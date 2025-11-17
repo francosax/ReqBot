@@ -332,14 +332,6 @@ def requirement_finder(path, keywords_set, filename):
                         f"(confidence: {confidence:.2f}): {cleaned_sentence[:100]}..."
                     )
 
-                # Phase 2 Improvement: Calculate confidence score for this requirement
-                confidence_score = calculate_requirement_confidence(
-                    cleaned_sentence,
-                    keyword_word,
-                    word_count
-                )
-                confidences.append(confidence_score)
-
     df = pd.DataFrame({
         'Label Number': tag,
         'Description': matching_sentences,
