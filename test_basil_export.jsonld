@@ -1,0 +1,90 @@
+{
+  "@context": "https://spdx.github.io/spdx-3-model/context.jsonld",
+  "type": "SpdxDocument",
+  "spdxId": "spdx:document:basil:test",
+  "name": "Test Requirements Export",
+  "creationInfo": {
+    "created": "2025-11-17T17:22:54.854679",
+    "createdBy": [
+      "ReqBot-Test"
+    ],
+    "specVersion": "3.0.1"
+  },
+  "element": [
+    {
+      "type": "software_File",
+      "spdxId": "spdx:file:basil:software-requirement:1",
+      "software_copyrightText": "",
+      "software_primaryPurpose": "requirement",
+      "name": "Authentication Requirement",
+      "comment": "BASIL Software Requirement ID 1",
+      "description": "The system shall provide user authentication",
+      "verifiedUsing": [
+        {
+          "type": "Hash",
+          "algorithm": "md5",
+          "hashValue": "a6404f33250681eb4f47682852db0333"
+        }
+      ],
+      "creationInfo": "_:creation_info_spdx:file:basil:software-requirement:1"
+    },
+    {
+      "type": "Annotation",
+      "annotationType": "other",
+      "spdxId": "spdx:annotation:basil:software-requirement:1",
+      "subject": "spdx:file:basil:software-requirement:1",
+      "statement": "{\"id\": 1, \"title\": \"Authentication Requirement\", \"description\": \"The system shall provide user authentication\", \"status\": \"CRITICAL\", \"created_by\": \"ReqBot-Test\", \"version\": \"1\", \"created_at\": \"2025-11-17 17:22\", \"updated_at\": \"2025-11-17 17:22\", \"__tablename__\": \"sw_requirements\", \"reqbot_metadata\": {\"page\": 1, \"keyword\": \"shall\", \"confidence\": 0.9, \"priority\": \"high\"}}",
+      "creationInfo": "_:creation_info_spdx:file:basil:software-requirement:1"
+    },
+    {
+      "type": "software_File",
+      "spdxId": "spdx:file:basil:software-requirement:2",
+      "software_copyrightText": "",
+      "software_primaryPurpose": "requirement",
+      "name": "Encryption Requirement",
+      "comment": "BASIL Software Requirement ID 2",
+      "description": "The application must encrypt all data at rest",
+      "verifiedUsing": [
+        {
+          "type": "Hash",
+          "algorithm": "md5",
+          "hashValue": "68b964e5ae8d3da9c47faac9024582b0"
+        }
+      ],
+      "creationInfo": "_:creation_info_spdx:file:basil:software-requirement:2"
+    },
+    {
+      "type": "Annotation",
+      "annotationType": "other",
+      "spdxId": "spdx:annotation:basil:software-requirement:2",
+      "subject": "spdx:file:basil:software-requirement:2",
+      "statement": "{\"id\": 2, \"title\": \"Encryption Requirement\", \"description\": \"The application must encrypt all data at rest\", \"status\": \"CRITICAL\", \"created_by\": \"ReqBot-Test\", \"version\": \"1\", \"created_at\": \"2025-11-17 17:22\", \"updated_at\": \"2025-11-17 17:22\", \"__tablename__\": \"sw_requirements\", \"reqbot_metadata\": {\"page\": 1, \"keyword\": \"shall\", \"confidence\": 0.9, \"priority\": \"high\"}}",
+      "creationInfo": "_:creation_info_spdx:file:basil:software-requirement:2"
+    },
+    {
+      "type": "software_File",
+      "spdxId": "spdx:file:basil:software-requirement:3",
+      "software_copyrightText": "",
+      "software_primaryPurpose": "requirement",
+      "name": "Security Requirement",
+      "comment": "BASIL Software Requirement ID 3",
+      "description": "Security protocols should comply with standards",
+      "verifiedUsing": [
+        {
+          "type": "Hash",
+          "algorithm": "md5",
+          "hashValue": "08b0011971f13cc61b96cb0b836d7fe0"
+        }
+      ],
+      "creationInfo": "_:creation_info_spdx:file:basil:software-requirement:3"
+    },
+    {
+      "type": "Annotation",
+      "annotationType": "other",
+      "spdxId": "spdx:annotation:basil:software-requirement:3",
+      "subject": "spdx:file:basil:software-requirement:3",
+      "statement": "{\"id\": 3, \"title\": \"Security Requirement\", \"description\": \"Security protocols should comply with standards\", \"status\": \"CRITICAL\", \"created_by\": \"ReqBot-Test\", \"version\": \"1\", \"created_at\": \"2025-11-17 17:22\", \"updated_at\": \"2025-11-17 17:22\", \"__tablename__\": \"sw_requirements\", \"reqbot_metadata\": {\"page\": 1, \"keyword\": \"shall\", \"confidence\": 0.9, \"priority\": \"security\"}}",
+      "creationInfo": "_:creation_info_spdx:file:basil:software-requirement:3"
+    }
+  ]
+}
