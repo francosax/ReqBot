@@ -1,7 +1,7 @@
 # ReqBot TODO List & Future Suggestions
 
-**Last Updated**: 2025-11-15
-**Current Version**: 2.0.0
+**Last Updated**: 2025-11-17
+**Current Version**: 2.1.0
 
 This document tracks future enhancements, feature requests, and improvements for ReqBot.
 

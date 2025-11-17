@@ -1,27 +1,27 @@
-# ReqBot 2.0
+# ReqBot 2.1
 
 **Automatic Requirements Extraction Tool for PDF Specifications**
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![Version](https://img.shields.io/badge/version-2.0.0-brightgreen.svg)](RELEASE_NOTES_v2.0.md)
+[![Version](https://img.shields.io/badge/version-2.1.0-brightgreen.svg)](RELEASE_NOTES.md)
 
-ReqBot is a powerful desktop application that automatically extracts requirements from PDF specification documents using advanced NLP techniques. It generates compliance matrices in Excel format and creates annotated PDFs with highlighted requirements.
+ReqBot is a powerful desktop application that automatically extracts requirements from PDF specification documents using advanced NLP techniques. It generates compliance matrices in Excel format, BASIL-compatible SPDX exports, and creates annotated PDFs with highlighted requirements.
 
 ---
 
-## ✨ What's New in Version 2.0
+## ✨ What's New in Version 2.1
 
-Version 2.0 introduces **major improvements** to NLP extraction accuracy and performance:
+Version 2.1 introduces **user experience enhancements and quality features**:
 
-- 🎯 **93% fewer extraction errors** - Eliminated full-page highlight issues
-- ⚡ **3-5x faster processing** - Intelligent model caching for batch operations
-- 📊 **Confidence scoring** - Quality assessment for every extracted requirement
-- 📄 **Multi-column support** - Handles complex technical specifications
-- 🎨 **Pattern recognition** - Advanced requirement detection beyond keywords
-- 🛡️ **Smart validation** - Automatic error detection and fallback handling
+- 📁 **Recent Files/Projects** - Quick access to last 5 used paths via dropdown menus
+- 🎚️ **Adjustable Confidence Threshold** - Interactive slider control (0.0-1.0) with real-time filtering
+- 📊 **Confidence Display in Excel** - Color-coded confidence scores (Green/Yellow/Red) with auto-filtering
+- 🔧 **Excel Column Corrections** - Fixed Priority column positioning after Confidence addition
+- 🔗 **BASIL SPDX 3.0.1 Integration** - Automatic export of requirements to industry-standard format
+- ✅ **Enhanced Testing** - 63 tests (26 new for recent projects feature)
 
-[📝 See Full Release Notes](RELEASE_NOTES_v2.0.md)
+[📝 See v2.1 Changes](TODO.md) | [📝 v2.0 Release Notes](RELEASE_NOTES_v2.0.md)
 
 ---
 
@@ -360,6 +360,7 @@ This project is licensed under the GNU General Public License v3.0 - see the [LI
 
 ## 📊 Version History
 
+- **v2.1.0** (2025-11-17) - UX enhancements: Recent files/projects, adjustable confidence threshold, BASIL integration
 - **v2.0.0** (2025-11-15) - Major NLP improvements: accuracy, performance, quality scoring
 - **v1.2** (Previous) - Base functionality with GUI and Excel generation
 - **v1.x** - Initial releases
