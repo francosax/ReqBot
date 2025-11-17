@@ -24,20 +24,23 @@
 
 ## Project Overview
 
-**ReqBot** is a desktop GUI application that automatically extracts requirements from PDF specification documents using NLP (Natural Language Processing). It generates compliance matrices in Excel format and creates annotated PDFs with highlighted requirements.
+**ReqBot** is a desktop GUI application that automatically extracts requirements from PDF specification documents using NLP (Natural Language Processing). It generates compliance matrices in Excel format, BASIL-compatible SPDX 3.0.1 exports, and creates annotated PDFs with highlighted requirements.
 
 ### Key Features
 - **Automated Requirement Extraction**: Uses spaCy NLP to identify requirement sentences
 - **Compliance Matrix Generation**: Creates Excel files with color-coded priorities and validation rules
+- **BASIL SPDX 3.0.1 Export**: Automatically exports requirements to industry-standard SPDX format ⭐ *NEW!*
 - **PDF Annotation**: Generates highlighted PDFs with text annotations
 - **Customizable Keywords**: User-configurable requirement keywords via `RBconfig.ini`
 - **Multi-threaded Processing**: Non-blocking UI with background processing
+- **Bidirectional BASIL Integration**: Import/export requirements to/from BASIL traceability system ⭐ *NEW!*
 
 ### Tech Stack
 - **UI**: PySide6 (Qt for Python)
 - **PDF Processing**: PyMuPDF (fitz)
 - **NLP**: spaCy with en_core_web_sm model
 - **Data Handling**: Pandas, openpyxl
+- **SPDX/BASIL**: JSON-LD, SPDX 3.0.1 ⭐ *NEW!*
 - **Testing**: pytest, pytest-qt
 
 ---
@@ -1008,6 +1011,7 @@ pytest --cov=.
    - Extraction logic → `pdf_analyzer.py`
    - Excel output → `excel_writer.py`
    - PDF annotation → `highlight_requirements.py`
+   - BASIL export/import → `basil_integration.py` ⭐
    - Workflow changes → `RB_coordinator.py`
 
 2. **Read existing code** to understand context
@@ -1157,9 +1161,14 @@ ANALYSIS_TIME_PER_REQ = 5/60  # 5 minutes per requirement in hours
 
 ```
 ReqBot/
-├─ test_gui.py                    # GUI component tests (80 lines)
-├─ test_excel_writer.py           # Excel generation tests (149 lines)
-└─ test_highlight_requirements.py  # PDF highlighting tests (78 lines)
+├─ test_gui.py                         # GUI component tests (80 lines)
+├─ test_excel_writer.py                # Excel generation tests (149 lines)
+├─ test_highlight_requirements.py      # PDF highlighting tests (78 lines)
+├─ test_basil_integration.py           # BASIL integration tests (470 lines) ⭐ NEW
+├─ test_basil_simple.py                # BASIL core tests (330 lines) ⭐ NEW
+├─ test_basil_import.py                # BASIL import tests (270 lines) ⭐ NEW
+├─ test_integration.py                 # Full integration test (249 lines) ⭐ NEW
+└─ test_integration_simple.py          # Simple integration test (266 lines) ⭐ NEW
 ```
 
 ### Test Framework
@@ -1257,14 +1266,109 @@ assert note_count == expected_notes
 
 ---
 
+#### test_basil_integration.py ⭐ *NEW*
+**Tests**: Comprehensive BASIL integration testing (requires pandas)
+
+**Test Classes**:
+- `TestUtilityFunctions`: Hash calculation, ID extraction, element creation
+- `TestExportFunctionality`: Export validation, content verification, metadata preservation
+- `TestImportFunctionality`: Import validation, content mapping, error handling
+- `TestRoundTrip`: Export-import integrity verification
+- `TestValidation`: SPDX format validation
+- `TestMergeStrategies`: Append, update, replace strategies
+
+**Key Tests**:
+- 25+ test cases covering all BASIL functionality
+- Export/import round-trip verification
+- Data integrity checks
+- Error handling validation
+- All merge strategies tested
+
+**Run tests**:
+```bash
+pytest test_basil_integration.py -v
+```
+
+**AI Assistant Note**: Full test suite for BASIL integration. See [BASIL Integration](#basil-integration) section for details.
+
+---
+
+#### test_basil_simple.py ⭐ *NEW*
+**Tests**: Core BASIL functionality without pandas dependency
+
+**Key Tests** (8 test cases):
+1. MD5 hash calculation
+2. Requirement ID extraction (5 test cases)
+3. BASIL element creation
+4. SPDX document generation
+5. File I/O operations
+6. Format validation
+7. Round-trip data integrity
+8. Hash verification
+
+**Run tests**:
+```bash
+python3 test_basil_simple.py
+```
+
+**AI Assistant Note**: Standalone tests that don't require pandas. Useful for quick verification.
+
+---
+
+#### test_basil_import.py ⭐ *NEW*
+**Tests**: BASIL import and validation functionality
+
+**Test Suites** (5 suites):
+1. Format validation
+2. Requirements import
+3. Data verification
+4. Round-trip integrity
+5. Error handling (invalid files, malformed JSON, missing fields)
+
+**Run tests**:
+```bash
+python3 test_basil_import.py
+```
+
+---
+
+#### test_integration_simple.py ⭐ *NEW*
+**Tests**: Integration verification without dependencies
+
+**Test Categories** (7 tests):
+1. Verify imports in RB_coordinator.py
+2. Verify export_to_basil() integration
+3. Verify BASIL output file naming
+4. Verify error handling
+5. Verify workflow execution order
+6. Verify output naming convention
+7. Verify code section structure
+
+**Run tests**:
+```bash
+python3 test_integration_simple.py
+```
+
+**AI Assistant Note**: Verifies integration correctness by analyzing code structure. All tests passed ✓
+
+---
+
 ### Running Tests
 
 ```bash
-# All tests
+# All tests (requires pytest and pandas)
 pytest
 
 # Specific file
 pytest test_excel_writer.py
+
+# BASIL integration tests (requires pandas)
+pytest test_basil_integration.py -v
+
+# BASIL standalone tests (no pandas required)
+python3 test_basil_simple.py
+python3 test_basil_import.py
+python3 test_integration_simple.py
 
 # Specific test
 pytest test_gui.py::test_initial_state
@@ -1975,6 +2079,7 @@ A: Edit the color hex codes in `excel_writer.py` in the priority fill section.
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0 | 2025-11-15 | Initial CLAUDE.md creation |
+| 1.1 | 2025-11-17 | Added BASIL Integration section, updated workflow documentation |
 
 ---
 
