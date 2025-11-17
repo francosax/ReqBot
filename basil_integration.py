@@ -420,7 +420,7 @@ def validate_basil_format(data: Dict[str, Any]) -> Tuple[bool, str]:
             return False, "No software requirements found in document"
 
         logger.info(f"Validation successful: {req_count} requirements found")
-        return True, f"Valid BASIL format with {req_count} requirements"
+        return True, f"Valid BASIL format with {req_count} requirements found"
 
     except Exception as e:
         return False, f"Validation error: {str(e)}"
@@ -454,9 +454,10 @@ def merge_basil_requirements(existing_df: pd.DataFrame,
             # Find matching requirement in existing
             mask = result['Label Number'] == label
             if mask.any():
-                # Update existing row
+                # Update existing row - use row index to avoid pandas list assignment issues
+                idx = result[mask].index[0]
                 for col in imported_df.columns:
-                    result.loc[mask, col] = imported_row[col]
+                    result.at[idx, col] = imported_row[col]
                 logger.debug(f"Updated requirement {label}")
             else:
                 # Add new requirement
