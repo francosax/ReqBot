@@ -18,6 +18,7 @@ Date: 2025-11-18
 import json
 import logging
 import os
+import threading
 from typing import Dict, List, Set, Optional
 from pathlib import Path
 
@@ -315,18 +316,25 @@ class LanguageConfig:
 
 # Singleton instance for global access
 _config_instance: Optional[LanguageConfig] = None
+_config_lock = threading.Lock()
 
 
 def get_language_config() -> LanguageConfig:
     """
-    Get singleton instance of LanguageConfig.
+    Get singleton instance of LanguageConfig (thread-safe).
+
+    Uses double-check locking pattern to ensure thread safety
+    while minimizing lock overhead.
 
     Returns:
         LanguageConfig instance
     """
     global _config_instance
     if _config_instance is None:
-        _config_instance = LanguageConfig()
+        with _config_lock:
+            # Double-check: another thread might have created instance
+            if _config_instance is None:
+                _config_instance = LanguageConfig()
     return _config_instance
 
 

@@ -78,12 +78,16 @@ class LanguageDetector:
         'it': {
             'il', 'di', 'e', 'la', 'a', 'essere', 'un', 'avere', 'per', 'che',
             'in', 'non', 'da', 'con', 'su', 'come', 'al', 'del', 'alla', 'questo',
-            'deve', 'dovrebbe', 'può', 'potrebbe', 'requisito', 'garantire'
+            'deve', 'dovrebbe', 'può', 'potrebbe', 'requisito', 'garantire',
+            'sono', 'sia', 'siano', 'tutti', 'tutto', 'gli', 'delle', 'della',
+            'sistema', 'sicurezza', 'soddisfatti', 'soddisfatto'
         },
         'es': {
             'el', 'la', 'de', 'que', 'y', 'a', 'en', 'un', 'ser', 'se',
             'no', 'haber', 'por', 'con', 'su', 'para', 'como', 'estar', 'tener', 'le',
-            'debe', 'debería', 'puede', 'podría', 'requisito', 'garantizar'
+            'debe', 'debería', 'puede', 'podría', 'requisito', 'garantizar',
+            'son', 'sea', 'sean', 'todos', 'todo', 'los', 'las', 'del',
+            'sistema', 'seguridad', 'cumplan', 'cumplir', 'garantizada', 'garantizado'
         }
     }
 
@@ -221,13 +225,13 @@ class LanguageDetector:
         # Extract trigrams (simplified for performance)
         trigrams = [text[i:i+3] for i in range(len(text) - 2)]
 
-        # Language-specific trigram patterns (most common)
+        # Language-specific trigram patterns (most common and distinctive)
         lang_trigrams = {
-            'en': {'the', 'and', 'ing', 'ion', 'tio', 'ent', 'ati'},
-            'fr': {'les', 'ion', 'que', 'ent', 'tio', 'ait', 'des'},
-            'de': {'der', 'ein', 'ich', 'und', 'den', 'sch', 'ung'},
-            'it': {'ion', 'ent', 'lla', 'del', 'che', 'gli', 'ell'},
-            'es': {'ion', 'ent', 'que', 'los', 'del', 'aci', 'aci'}
+            'en': {'the', 'and', 'ing', 'ion', 'tio', 'ent', 'ati', 'for', 'ter'},
+            'fr': {'les', 'ent', 'que', 'ait', 'des', 'eur', 'ais', 'ont', 'aux'},
+            'de': {'der', 'ein', 'ich', 'und', 'den', 'sch', 'ung', 'cht', 'gen'},
+            'it': {'lla', 'del', 'che', 'gli', 'ell', 'zio', 'azi', 'tte', 'nto', 'sta', 'tto', 'tta', 'nza', 'gno', 'ere'},
+            'es': {'que', 'los', 'del', 'aci', 'ión', 'nci', 'ora', 'ara', 'era', 'nte', 'ado', 'ido', 'par', 'ció', 'est'}
         }
 
         target_trigrams = lang_trigrams.get(lang_code, set())
