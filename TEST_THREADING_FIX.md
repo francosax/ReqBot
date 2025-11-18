@@ -8,14 +8,14 @@ Implemented critical threading fixes in `main_app.py` to prevent crashes when ru
 ### Changes Made
 1. Added running thread check (lines 436-444)
 2. Added cleanup of previous thread/worker (lines 446-451)
-3. Added automated unit test in `test_gui.py` (lines 125-173)
+3. Added automated unit test in `tests/test_gui.py` (lines 125-173)
 
 ### Automated Test Results
 ✅ **PASSED** - `test_threading_fix_prevents_double_start`
 - Successfully verified that warning dialog appears when attempting to start processing while already running
 - Confirmed that logger warning message is generated
-- Test location: `test_gui.py::test_threading_fix_prevents_double_start`
-- Run command: `pytest test_gui.py::test_threading_fix_prevents_double_start -v`
+- Test location: `tests/test_gui.py::test_threading_fix_prevents_double_start`
+- Run command: `pytest tests/test_gui.py::test_threading_fix_prevents_double_start -v`
 
 ---
 

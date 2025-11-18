@@ -8,8 +8,15 @@ including proper cleanup to avoid Windows fatal exceptions.
 import pytest
 import sys
 import gc
+import os
+from pathlib import Path
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import QTimer
+
+# Add parent directory to Python path so tests can import main modules
+parent_dir = Path(__file__).parent.parent
+if str(parent_dir) not in sys.path:
+    sys.path.insert(0, str(parent_dir))
 
 
 @pytest.fixture(scope="session", autouse=True)

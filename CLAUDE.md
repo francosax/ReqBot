@@ -278,11 +278,13 @@ python main_app.py
 
 ### Test Structure
 
-- `test_gui.py` - GUI components (8 tests)
-- `test_excel_writer.py` - Excel generation (3 tests)
-- `test_highlight_requirements.py` - PDF highlighting (2 tests)
-- `test_basil_integration.py` - BASIL integration (25 tests)
-- `test_integration*.py` - End-to-end workflows
+All test files are located in the `tests/` directory:
+
+- `tests/test_gui.py` - GUI components (8 tests)
+- `tests/test_excel_writer.py` - Excel generation (3 tests)
+- `tests/test_highlight_requirements.py` - PDF highlighting (2 tests)
+- `tests/test_basil_integration.py` - BASIL integration (25 tests)
+- `tests/test_integration*.py` - End-to-end workflows
 
 ### Running Tests
 
@@ -291,10 +293,10 @@ python main_app.py
 pytest -v
 
 # Specific file
-pytest test_gui.py
+pytest tests/test_gui.py
 
 # Specific test
-pytest test_gui.py::test_threading_fix_prevents_double_start
+pytest tests/test_gui.py::test_threading_fix_prevents_double_start
 
 # With coverage
 pytest --cov=. --cov-report=html
@@ -303,7 +305,7 @@ pytest --cov=. --cov-report=html
 ### Key Test: Threading Fix (v2.1.1)
 
 ```python
-# test_gui.py::test_threading_fix_prevents_double_start
+# tests/test_gui.py::test_threading_fix_prevents_double_start
 def test_threading_fix_prevents_double_start(gui):
     """Verify double-start prevention and thread cleanup"""
     # Simulate processing
@@ -541,7 +543,7 @@ python run_app.py               # Interactive menu
 ### Running Tests
 ```bash
 pytest -v                       # All tests
-pytest test_gui.py -v           # GUI tests only
+pytest tests/test_gui.py -v     # GUI tests only
 pytest --cov=.                  # With coverage
 ```
 

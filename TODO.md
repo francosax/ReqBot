@@ -78,7 +78,7 @@ This document tracks future enhancements, feature requests, and improvements for
   - ✅ Added comprehensive cleanup code in test fixtures
   - ✅ Created conftest.py with session-wide Qt cleanup
   - ✅ Added proper thread cleanup and deleteLater() handling
-  - Location: `test_gui.py`, `conftest.py`
+  - Location: `tests/test_gui.py`, `tests/conftest.py`
   - **Implementation Date**: 2025-11-17
   - **Details**: Enhanced Qt test cleanup with proper thread termination, event processing, and garbage collection. Should significantly reduce or eliminate Windows fatal exceptions during test cleanup.
 
@@ -104,7 +104,7 @@ This document tracks future enhancements, feature requests, and improvements for
   - Location: `main_app.py` (lines 550-580, 514-516)
   - **Implementation Date**: 2025-11-18
   - **Details**: Users can now run requirement extraction multiple times without restarting the application. Thread properly terminates with quit() + wait(), references set to None for garbage collection. Automated test confirms fix works correctly.
-  - **Test**: `test_gui.py::test_threading_fix_prevents_double_start` (PASSED)
+  - **Test**: `tests/test_gui.py::test_threading_fix_prevents_double_start` (PASSED)
 
 ---
 

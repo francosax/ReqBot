@@ -55,7 +55,7 @@ def start_processing(self):
 
 ### Automated Unit Test
 
-**Location**: `test_gui.py::test_threading_fix_prevents_double_start` (Lines 125-173)
+**Location**: `tests/test_gui.py::test_threading_fix_prevents_double_start` (Lines 125-173)
 
 **Test Strategy**:
 - Creates a mock thread that reports as "running"
@@ -68,12 +68,12 @@ def start_processing(self):
 
 **Run Command**:
 ```bash
-pytest test_gui.py::test_threading_fix_prevents_double_start -v
+pytest tests/test_gui.py::test_threading_fix_prevents_double_start -v
 ```
 
 **Test Output**:
 ```
-test_gui.py::test_threading_fix_prevents_double_start PASSED [100%]
+tests/test_gui.py::test_threading_fix_prevents_double_start PASSED [100%]
 ======================== 1 passed, 6 warnings in 12.59s ========================
 ```
 
@@ -124,7 +124,7 @@ This message appears in:
    - Added running thread check
    - Added thread/worker cleanup logic
 
-2. **test_gui.py** (Lines 125-173)
+2. **tests/test_gui.py** (Lines 125-173)
    - Added automated unit test
    - Verifies warning dialog and logging behavior
 
@@ -141,7 +141,7 @@ This message appears in:
 4. Monitor the log file for any unexpected warnings
 
 ### For Developers
-1. ✅ Automated test is in place - run `pytest test_gui.py::test_threading_fix_prevents_double_start`
+1. ✅ Automated test is in place - run `pytest tests/test_gui.py::test_threading_fix_prevents_double_start`
 2. ✅ Code follows existing style and conventions
 3. ✅ Comprehensive logging for debugging
 4. ⚠️ Consider adding more automated tests for edge cases
@@ -165,10 +165,10 @@ Fixes issue where application would crash when clicking
 
 Files modified:
 - main_app.py (lines 436-451)
-- test_gui.py (lines 125-173)
+- tests/test_gui.py (lines 125-173)
 - TEST_THREADING_FIX.md (updated with test results)
 
-Test: pytest test_gui.py::test_threading_fix_prevents_double_start -v
+Test: pytest tests/test_gui.py::test_threading_fix_prevents_double_start -v
 ```
 
 ## Conclusion
