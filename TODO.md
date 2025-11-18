@@ -1,7 +1,8 @@
 # ReqBot TODO List & Future Suggestions
 
-**Last Updated**: 2025-11-17
+**Last Updated**: 2025-11-18
 **Current Version**: 2.1.0
+**In Development**: v3.0 - Multi-lingual Extraction (claude/multilingual-extraction-v3.0)
 
 This document tracks future enhancements, feature requests, and improvements for ReqBot.
 
@@ -641,7 +642,16 @@ This document tracks future enhancements, feature requests, and improvements for
 
 ### Advanced NLP
 
-- [ ] Multi-language support (beyond English)
+- [x] **Multi-language support (beyond English)** 🚧 **IN PROGRESS - v3.0**
+  - Priority: High
+  - Effort: 3-4 weeks
+  - Support for French, German, Italian, Spanish
+  - Using per-language spaCy models
+  - Auto-detection with langdetect
+  - Offline/internet-independent approach
+  - **Status**: Implementation started 2025-11-18
+  - **Branch**: claude/multilingual-extraction-v3.0
+  - Location: `language_detector.py`, `language_config.py`, `multilingual_nlp.py`
 - [ ] Domain-specific language models
 - [ ] Custom entity recognition
 - [ ] Relationship extraction (dependencies)
