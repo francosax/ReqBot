@@ -7,7 +7,7 @@ processing status, and duplicate detection via file hashing.
 
 import logging
 import hashlib
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from datetime import datetime
 from pathlib import Path
 
@@ -117,7 +117,7 @@ class DocumentService:
         filename: str,
         file_path: str,
         session: Optional[Session] = None
-    ) -> tuple[Optional[Document], bool]:
+    ) -> Tuple[Optional[Document], bool]:
         """
         Get existing document or create new one.
 
@@ -134,7 +134,7 @@ class DocumentService:
         Returns:
             tuple: (Document, is_new) where is_new indicates if document was created
         """
-        def _get_or_create(session: Session) -> tuple[Document, bool]:
+        def _get_or_create(session: Session) -> Tuple[Document, bool]:
             # Calculate current file hash
             current_hash = DocumentService.calculate_file_hash(file_path)
 

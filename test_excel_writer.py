@@ -32,7 +32,8 @@ def empty_compliance_matrix_template():
     matrix_sheet['B1'] = "Page"
     matrix_sheet['C1'] = "Label Number"
     matrix_sheet['D1'] = "Description"
-    matrix_sheet['E1'] = "Confidence"  # NEW: Confidence header
+    matrix_sheet['E1'] = "Confidence"  # NEW: Confidence header (v2.1)
+    matrix_sheet['J1'] = "Category"  # NEW: Category header (v2.2)
     matrix_sheet['I1'] = "Priority"  # SHIFTED from H to I
     matrix_sheet['N1'] = "Status"  # SHIFTED from M to N
     matrix_sheet['O1'] = "Completeness"  # SHIFTED from N to O
@@ -55,7 +56,8 @@ def test_write_excel_file_data_and_priority_fills(empty_compliance_matrix_templa
         'Label Number': ['L001', 'L002', 'L003'],
         'Description': ['Req 1', 'Req 2', 'Req 3'],
         'Priority': ['high', 'medium', 'low'],
-        'Confidence': [0.95, 0.72, 0.55]  # NEW: Confidence scores
+        'Confidence': [0.95, 0.72, 0.55],  # NEW: Confidence scores
+        'Category': ['Functional', 'Safety', 'Performance']  # NEW: Category (v2.2)
     }
     df = pd.DataFrame(data, index=['REQ-A', 'REQ-B', 'REQ-C'])
 
@@ -101,7 +103,7 @@ def test_write_excel_file_data_validations(empty_compliance_matrix_template):
     excel_file = empty_compliance_matrix_template
 
     data = {  # Minimal data just to get the function to run
-        'Page': [1], 'Label Number': ['L001'], 'Description': ['Desc'], 'Priority': ['high'], 'Confidence': [0.85]
+        'Page': [1], 'Label Number': ['L001'], 'Description': ['Desc'], 'Priority': ['high'], 'Confidence': [0.85], 'Category': ['Functional']
     }
     df = pd.DataFrame(data, index=['REQ-X'])
 
@@ -129,7 +131,8 @@ def test_write_excel_file_formulas(empty_compliance_matrix_template):
         'Label Number': ['L001', 'L002'],
         'Description': ['Req 1', 'Req 2'],
         'Priority': ['high', 'low'],
-        'Confidence': [0.92, 0.68]  # NEW: Confidence scores
+        'Confidence': [0.92, 0.68],  # NEW: Confidence scores
+        'Category': ['Functional', 'Safety']  # NEW: Category (v2.2)
     }
     df = pd.DataFrame(data, index=['REQ-A', 'REQ-B'])
 
@@ -165,7 +168,8 @@ def test_write_excel_file_confidence_display_and_formatting(empty_compliance_mat
         'Label Number': ['L001', 'L002', 'L003'],
         'Description': ['High conf req', 'Medium conf req', 'Low conf req'],
         'Priority': ['high', 'medium', 'low'],
-        'Confidence': [0.95, 0.72, 0.55]  # High, Medium, Low confidence
+        'Confidence': [0.95, 0.72, 0.55],  # High, Medium, Low confidence
+        'Category': ['Functional', 'Safety', 'Performance']  # NEW: Category (v2.2)
     }
     df = pd.DataFrame(data, index=['REQ-A', 'REQ-B', 'REQ-C'])
 
@@ -212,7 +216,8 @@ def test_write_excel_file_auto_filter(empty_compliance_matrix_template):
         'Label Number': ['L001', 'L002', 'L003'],
         'Description': ['Req 1', 'Req 2', 'Req 3'],
         'Priority': ['high', 'medium', 'low'],
-        'Confidence': [0.95, 0.72, 0.55]
+        'Confidence': [0.95, 0.72, 0.55],
+        'Category': ['Functional', 'Safety', 'Performance']  # NEW: Category (v2.2)
     }
     df = pd.DataFrame(data, index=['REQ-A', 'REQ-B', 'REQ-C'])
 
