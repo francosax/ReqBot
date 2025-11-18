@@ -102,13 +102,13 @@ This document tracks future enhancements, feature requests, and improvements for
 
 ### Features
 
-- [ ] **Batch Processing Mode**
+- [ ] **Batch Processing Mode** ⏸️ **DEFERRED TO v3.0**
   - Priority: High
   - Effort: 1 week
   - Process multiple folders in one run
   - Generate combined compliance matrix
   - Progress tracking for batch operations
-  - **Status**: Planned for future release
+  - **Status**: Deferred to v3.0 - Focus shifted to enterprise features
 
 - [x] **Requirement Categories/Tags** ✅ **COMPLETED**
   - Priority: Medium
@@ -138,28 +138,31 @@ This document tracks future enhancements, feature requests, and improvements for
   - **Implementation Date**: 2025-11-18
   - **Details**: Full keyword profile management system with 6 predefined profiles (Generic, Aerospace, Medical, Automotive, Software, Safety). GUI includes profile selector dropdown and "Manage Profiles" dialog for creating, editing, and deleting custom profiles. Profiles saved to keyword_profiles.json.
 
-- [ ] **Undo/Redo for Manual Edits**
+- [ ] **Undo/Redo for Manual Edits** ⏸️ **DEFERRED TO v3.0**
   - Priority: Low
   - Effort: 1 week
   - Allow editing requirements before export
   - Undo/redo functionality
   - Mark manual edits differently
+  - **Status**: Deferred to v3.0 - Will be part of web-based version
 
 ### Improvements
 
-- [ ] **Dark Mode Theme**
+- [ ] **Dark Mode Theme** ⏸️ **DEFERRED TO v3.0**
   - Priority: Low
   - Effort: 2-3 days
   - Add dark theme option
   - System theme detection
   - User preference storage
+  - **Status**: Deferred to v3.0 - Will be part of web UI redesign
 
-- [ ] **Internationalization (i18n)**
+- [ ] **Internationalization (i18n)** ⏸️ **DEFERRED TO v3.0**
   - Priority: Low
   - Effort: 1-2 weeks
   - Support for multiple languages
   - Start with Italian, German, French
   - Translation files structure
+  - **Status**: Deferred to v3.0 - Will be implemented with web-based version
 
 ---
 
