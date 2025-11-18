@@ -11,7 +11,7 @@ from basil_integration import export_to_basil
 # v3.0: Database services
 from database.services.document_service import DocumentService
 from database.services.requirement_service import RequirementService
-from database.models import Priority
+from database.models import Priority, ProcessingStatus
 
 logger = logging.getLogger(__name__)
 
@@ -96,7 +96,7 @@ def requirement_bot(path_in, cm_path, words_to_find, path_out, confidence_thresh
             # Update document status to completed
             DocumentService.update_processing_status(
                 document_id=document.id,
-                status='completed',
+                status=ProcessingStatus.COMPLETED,
                 page_count=int(df['Page'].max()) if 'Page' in df.columns else None
             )
         except Exception as e:
