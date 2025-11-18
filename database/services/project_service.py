@@ -28,7 +28,7 @@ class ProjectService:
         output_folder_path: str,
         compliance_matrix_template: Optional[str] = None,
         description: Optional[str] = None,
-        metadata: Optional[dict] = None,
+        additional_data: Optional[dict] = None,
         session: Optional[Session] = None
     ) -> Optional[Project]:
         """
@@ -55,8 +55,8 @@ class ProjectService:
                 compliance_matrix_template=compliance_matrix_template
             )
 
-            if metadata:
-                project.metadata = metadata
+            if additional_data:
+                project.additional_data = additional_data
 
             session.add(project)
             session.flush()  # Get the ID without committing
@@ -220,7 +220,7 @@ class ProjectService:
         output_folder_path: Optional[str] = None,
         compliance_matrix_template: Optional[str] = None,
         is_active: Optional[bool] = None,
-        metadata: Optional[dict] = None,
+        additional_data: Optional[dict] = None,
         session: Optional[Session] = None
     ) -> Optional[Project]:
         """
@@ -259,8 +259,8 @@ class ProjectService:
                 project.compliance_matrix_template = compliance_matrix_template
             if is_active is not None:
                 project.is_active = is_active
-            if metadata is not None:
-                project.metadata = metadata
+            if additional_data is not None:
+                project.additional_data = additional_data
 
             project.updated_at = datetime.now()
             session.flush()

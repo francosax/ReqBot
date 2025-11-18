@@ -123,15 +123,15 @@ class TestProjectModel:
         )
         
         # Set metadata as dict (SQLAlchemy handles JSON conversion)
-        project.metadata = {"key1": "value1", "key2": 123}
+        project.additional_data = {"key1": "value1", "key2": 123}
         
         test_session.add(project)
         test_session.flush()
         test_session.refresh(project)
         
         # Read back as dict
-        assert project.metadata == {"key1": "value1", "key2": 123}
-        assert isinstance(project.metadata, dict)
+        assert project.additional_data == {"key1": "value1", "key2": 123}
+        assert isinstance(project.additional_data, dict)
     
     def test_project_repr(self, test_session):
         """Test project __repr__ method."""
@@ -449,7 +449,7 @@ class TestProcessingSessionModel:
         proc_session.pdf_output_paths = ["/out/file1.pdf", "/out/file2.pdf"]
         proc_session.warnings = ["Warning 1", "Warning 2"]
         proc_session.errors = ["Error 1"]
-        proc_session.metadata = {"custom_key": "custom_value"}
+        proc_session.additional_data = {"custom_key": "custom_value"}
         
         test_session.add(proc_session)
         test_session.flush()
@@ -459,7 +459,7 @@ class TestProcessingSessionModel:
         assert proc_session.pdf_output_paths[0] == "/out/file1.pdf"
         assert len(proc_session.warnings) == 2
         assert len(proc_session.errors) == 1
-        assert proc_session.metadata["custom_key"] == "custom_value"
+        assert proc_session.additional_data["custom_key"] == "custom_value"
 
 
 class TestKeywordProfileModel:

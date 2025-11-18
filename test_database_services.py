@@ -193,7 +193,6 @@ class TestDocumentService:
             filename="test.pdf",
             file_path="/path/test.pdf",
             file_hash="abc123",
-            file_size_bytes=1024,
             page_count=10,
             session=test_session
         )

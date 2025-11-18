@@ -51,7 +51,7 @@ class DocumentService:
         file_path: str,
         file_hash: Optional[str] = None,
         page_count: Optional[int] = None,
-        metadata: Optional[dict] = None,
+        additional_data: Optional[dict] = None,
         session: Optional[Session] = None
     ) -> Optional[Document]:
         """
@@ -93,8 +93,8 @@ class DocumentService:
                 processing_status=ProcessingStatus.PENDING
             )
 
-            if metadata:
-                doc.metadata = metadata
+            if additional_data:
+                doc.additional_data = additional_data
 
             session.add(doc)
             session.flush()

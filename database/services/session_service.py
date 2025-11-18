@@ -26,7 +26,7 @@ class ProcessingSessionService:
         keywords_used: Optional[str] = None,
         keyword_profile: Optional[str] = None,
         confidence_threshold: Optional[float] = None,
-        metadata: Optional[dict] = None,
+        additional_data: Optional[dict] = None,
         session: Optional[Session] = None
     ) -> Optional[ProcessingSession]:
         """
@@ -52,8 +52,8 @@ class ProcessingSessionService:
                 status=SessionStatus.RUNNING
             )
 
-            if metadata:
-                proc_session.metadata = metadata
+            if additional_data:
+                proc_session.additional_data = additional_data
 
             session.add(proc_session)
             session.flush()

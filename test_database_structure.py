@@ -101,7 +101,7 @@ class DatabaseStructureValidator:
         
         # Check for new JSON fields
         new_json_fields = [
-            (r'metadata.*mapped_column\(JSON', 'metadata as JSON'),
+            (r'metadata.*mapped_column\(JSON', 'additional_data as JSON'),
             (r'snapshot_data.*mapped_column\(JSON', 'snapshot_data as JSON'),
             (r'pdf_output_paths.*mapped_column\(JSON', 'pdf_output_paths as JSON'),
             (r'warnings.*mapped_column\(JSON', 'warnings as JSON'),

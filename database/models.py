@@ -98,8 +98,9 @@ class Project(Base):
     # Status
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
-    # Metadata (flexible JSON field for additional settings)
-    metadata: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    # Additional Data (flexible JSON field for additional settings)
+    # Note: 'metadata' is reserved by SQLAlchemy, so we use 'additional_data'
+    additional_data: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
 
     # Relationships
     documents: Mapped[List["Document"]] = relationship("Document", back_populates="project", cascade="all, delete-orphan")
@@ -154,8 +155,8 @@ class Document(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=func.now(), nullable=False)
 
-    # Metadata
-    metadata: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    # Additional Data
+    additional_data: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
 
     # Relationships
     project: Mapped["Project"] = relationship("Project", back_populates="documents")
@@ -228,8 +229,8 @@ class Requirement(Base):
     is_manually_edited: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     edited_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
-    # Metadata
-    metadata: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    # Additional Data
+    additional_data: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
 
     # Relationships
     document: Mapped["Document"] = relationship("Document", back_populates="requirements")
@@ -365,8 +366,8 @@ class ProcessingSession(Base):
     warnings: Mapped[Optional[list]] = mapped_column(JSON, nullable=True)
     errors: Mapped[Optional[list]] = mapped_column(JSON, nullable=True)
 
-    # Metadata
-    metadata: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    # Additional Data
+    additional_data: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
 
     # Relationships
     project: Mapped["Project"] = relationship("Project", back_populates="processing_sessions")

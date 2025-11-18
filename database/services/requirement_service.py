@@ -36,7 +36,7 @@ class RequirementService:
         confidence_score: Optional[float] = None,
         raw_text: Optional[str] = None,
         extraction_method: str = 'spacy_nlp',
-        metadata: Optional[dict] = None,
+        additional_data: Optional[dict] = None,
         session: Optional[Session] = None
     ) -> Optional[Requirement]:
         """
@@ -77,8 +77,8 @@ class RequirementService:
                 is_current=True
             )
 
-            if metadata:
-                req.metadata = metadata
+            if additional_data:
+                req.additional_data = additional_data
 
             session.add(req)
             session.flush()
@@ -183,7 +183,7 @@ class RequirementService:
             'confidence_score': requirement.confidence_score,
             'raw_text': requirement.raw_text,
             'extraction_method': requirement.extraction_method,
-            'metadata': requirement.metadata
+            'additional_data': requirement.additional_data
         }
 
         history = RequirementHistory(

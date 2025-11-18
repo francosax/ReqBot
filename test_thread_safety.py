@@ -184,9 +184,10 @@ class TestLockBehavior:
         assert hasattr(db_module, '_session_factory_lock')
         assert hasattr(db_module, '_scoped_session_lock')
 
-        assert isinstance(db_module._engine_lock, threading.Lock)
-        assert isinstance(db_module._session_factory_lock, threading.Lock)
-        assert isinstance(db_module._scoped_session_lock, threading.Lock)
+        # Check locks exist and are lock objects (type name check)
+        assert type(db_module._engine_lock).__name__ == 'lock'
+        assert type(db_module._session_factory_lock).__name__ == 'lock'
+        assert type(db_module._scoped_session_lock).__name__ == 'lock'
 
         print("✓ All thread locks are properly defined")
 
