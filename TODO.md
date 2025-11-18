@@ -47,12 +47,16 @@ This document tracks future enhancements, feature requests, and improvements for
   - **Implementation Date**: 2025-11-17
   - **Details**: Added interactive slider and spinbox controls in GUI for real-time confidence threshold adjustment. Default value: 0.5 (50%). Range: 0.0-1.0. Requirements below threshold are filtered during extraction.
 
-- [ ] **Export Processing Report**
+- [x] **Export Processing Report** ✅ **COMPLETED**
   - Priority: Medium
   - Effort: 4-5 hours
-  - Generate summary PDF/HTML report after processing
-  - Include: total requirements, avg confidence, warnings, errors
-  - Location: New file `report_generator.py`
+  - ✅ Generate summary HTML report after processing
+  - ✅ Include: total requirements, avg confidence, warnings, errors
+  - ✅ Color-coded confidence scores with visual styling
+  - ✅ Per-file breakdown with warnings tracking
+  - Location: `report_generator.py`, integrated in `processing_worker.py`
+  - **Implementation Date**: 2025-11-17
+  - **Details**: HTML reports auto-generated after each processing run with comprehensive statistics, quality metrics, file details, warnings, and errors. Reports saved as YYYY.MM.DD_HHMMSS_Processing_Report.html
 
 - [x] **Recent Files/Projects** ✅ **COMPLETED**
   - Priority: Medium
@@ -66,17 +70,28 @@ This document tracks future enhancements, feature requests, and improvements for
 
 ### Bug Fixes
 
-- [ ] **Windows Fatal Exception on Test Cleanup**
+- [x] **Windows Fatal Exception on Test Cleanup** ✅ **ADDRESSED**
   - Priority: Low (doesn't affect functionality)
   - Effort: 2-4 hours
-  - Investigate Qt cleanup issue on Windows
-  - Location: Test suite
+  - ✅ Investigated Qt cleanup issue on Windows
+  - ✅ Added comprehensive cleanup code in test fixtures
+  - ✅ Created conftest.py with session-wide Qt cleanup
+  - ✅ Added proper thread cleanup and deleteLater() handling
+  - Location: `test_gui.py`, `conftest.py`
+  - **Implementation Date**: 2025-11-17
+  - **Details**: Enhanced Qt test cleanup with proper thread termination, event processing, and garbage collection. Should significantly reduce or eliminate Windows fatal exceptions during test cleanup.
 
-- [ ] **Progress Bar Not Always Accurate**
+- [x] **Progress Bar Not Always Accurate** ✅ **COMPLETED**
   - Priority: Medium
   - Effort: 1-2 hours
-  - Improve progress tracking granularity
-  - Location: `processing_worker.py`, `RB_coordinator.py`
+  - ✅ Improved progress tracking granularity
+  - ✅ Added per-file progress breakdown with sub-steps
+  - ✅ Reserved last 10% for report generation
+  - ✅ Progress updates even on errors
+  - ✅ File counter in log messages [1/5]
+  - Location: `processing_worker.py`
+  - **Implementation Date**: 2025-11-17
+  - **Details**: Progress bar now shows more accurate progress with per-file tracking (0-90% for files, 90-100% for report generation), intermediate updates during file processing, and better handling of edge cases.
 
 ---
 

@@ -180,3 +180,10 @@ application_gui.log
 template_compliance_matrix.xlsx
 sampleIO/test_output/
 .claude/
+
+# Generated reports and outputs
+*_Processing_Report.html
+*_Compliance Matrix_*.xlsx
+*_BASIL_Export_*.jsonld
+*_Tagged_*.pdf
+LOG.txt
