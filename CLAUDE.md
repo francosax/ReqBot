@@ -1,50 +1,42 @@
 # CLAUDE.md - AI Assistant Guide for ReqBot
 
-> **Last Updated**: 2025-11-17
-> **Purpose**: Comprehensive guide for AI assistants working with the ReqBot codebase
+> **Last Updated**: 2025-11-18
+> **Version**: 2.1.1
+> **Purpose**: Concise guide for AI assistants working with the ReqBot codebase
 
 ---
 
 ## Table of Contents
 
 1. [Project Overview](#project-overview)
-2. [NLP Improvements (Phases 1-3)](#nlp-improvements-phases-1-3)
-3. [BASIL Integration](#basil-integration) ⭐ *NEW!*
-4. [Architecture](#architecture)
-5. [Core Modules](#core-modules)
-6. [Data Flow](#data-flow)
-7. [Development Workflows](#development-workflows)
-8. [Code Conventions](#code-conventions)
-9. [Testing](#testing)
-10. [Common Tasks](#common-tasks)
-11. [Important Quirks](#important-quirks)
-12. [Dependencies](#dependencies)
+2. [Architecture](#architecture)
+3. [Core Modules](#core-modules)
+4. [Data Flow](#data-flow)
+5. [Development Workflows](#development-workflows)
+6. [Testing](#testing)
+7. [Common Tasks](#common-tasks)
+8. [Important Notes](#important-notes)
+9. [Dependencies](#dependencies)
 
 ---
 
 ## Project Overview
 
-**ReqBot** is a desktop GUI application that automatically extracts requirements from PDF specification documents using NLP (Natural Language Processing). It generates compliance matrices in Excel format, BASIL-compatible SPDX 3.0.1 exports, and creates annotated PDFs with highlighted requirements.
+**ReqBot** is a desktop GUI application that automatically extracts requirements from PDF specification documents using NLP. It generates compliance matrices in Excel format, BASIL-compatible SPDX 3.0.1 exports, and creates annotated PDFs with highlighted requirements.
 
 ### Key Features
-- **Automated Requirement Extraction**: Uses spaCy NLP to identify requirement sentences
-- **Compliance Matrix Generation**: Creates Excel files with color-coded priorities and validation rules
-- **BASIL SPDX 3.0.1 Export**: Automatically exports requirements to industry-standard SPDX format ⭐ *NEW!*
-- **PDF Annotation**: Generates highlighted PDFs with text annotations
-- **Customizable Keywords**: User-configurable requirement keywords via `RBconfig.ini`
-- **Multi-threaded Processing**: Non-blocking UI with background processing
-- **Bidirectional BASIL Integration**: Import/export requirements to/from BASIL traceability system ⭐ *NEW!*
+- **Automated Extraction**: spaCy NLP with confidence scoring (0.0-1.0)
+- **Excel Compliance Matrix**: Color-coded priorities, data validations, formulas
+- **BASIL SPDX 3.0.1 Export**: Industry-standard requirement export
+- **PDF Annotation**: Highlighted PDFs with text annotations
+- **Customizable Keywords**: User-configurable via `RBconfig.ini`
+- **Multi-threaded Processing**: Non-blocking UI with proper cleanup (v2.1.1 fix)
 
 ### Tech Stack
-- **UI**: PySide6 (Qt for Python)
-- **PDF Processing**: PyMuPDF (fitz)
-- **NLP**: spaCy with en_core_web_sm model
-- **Data Handling**: Pandas, openpyxl
-- **SPDX/BASIL**: JSON-LD, SPDX 3.0.1 ⭐ *NEW!*
-- **Testing**: pytest, pytest-qt
+- **UI**: PySide6 (Qt), **PDF**: PyMuPDF (fitz), **NLP**: spaCy en_core_web_sm
+- **Data**: Pandas, openpyxl, **Export**: JSON-LD SPDX 3.0.1, **Tests**: pytest, pytest-qt
 
-### Configuration
-
+### Key Constants
 ```python
 # pdf_analyzer.py
 MIN_REQUIREMENT_LENGTH_WORDS = 5
@@ -54,342 +46,149 @@ MAX_REQUIREMENT_LENGTH_WORDS = 100
 MAX_HIGHLIGHT_COVERAGE_PERCENT = 40
 ```
 
-### Documentation
-
-For detailed analysis and recommendations, see:
-- `NLP_IMPROVEMENT_ANALYSIS.md` - Full technical analysis
-- `BASIL_INTEGRATION_TEST_REPORT.md` - Full tech and report test
-
 ---
+
 ## Architecture
 
 ReqBot follows a **three-layer architecture**:
 
 ```
 ┌─────────────────────────────────────┐
-│   Presentation Layer                │
-│   - main_app.py (PySide6 GUI)       │
-│   - processing_worker.py (QThread)  │
-└────────────┬────────────────────────┘
-             │
-┌────────────▼────────────────────────┐
-│   Business Logic Layer              │
-│   - RB_coordinator.py (Orchestrator)│
-│   - pdf_analyzer.py (NLP Extraction)│
-│   - excel_writer.py (Matrix Gen)    │
-│   - highlight_requirements.py       │
-└────────────┬────────────────────────┘
-             │
-┌────────────▼────────────────────────┐
-│   Data/Utility Layer                │
-│   - config_RB.py (Configuration)    │
-│   - get_all_files.py (File Utils)   │
+│ Presentation Layer                  │
+│ main_app.py, processing_worker.py   │
+├─────────────────────────────────────┤
+│ Business Logic Layer                │
+│ RB_coordinator.py, pdf_analyzer.py  │
+│ excel_writer.py, highlight_*.py     │
+├─────────────────────────────────────┤
+│ Data/Utility Layer                  │
+│ config_RB.py, get_all_files.py      │
 └─────────────────────────────────────┘
 ```
 
-### Entry Points
-- **GUI Application**: `main_app.py` - Direct GUI launch
-- **Launcher Menu**: `run_app.py` - Interactive menu (GUI or tests)
+**Entry Points**: `main_app.py` (direct GUI), `run_app.py` (launcher menu)
 
 ---
 
 ## Core Modules
 
-### main_app.py (~430 lines)
-**Purpose**: Main PySide6 GUI application
+### main_app.py (~580 lines)
+**PySide6 GUI application**
 
-**Key Classes**:
-- `QTextEditLogger`: Custom logging handler for GUI text widget
-- `RequirementBotApp(QWidget)`: Main application window
+**Key Classes**: `QTextEditLogger`, `RequirementBotApp(QWidget)`
 
-**Important Methods**:
-- `init_ui()`: Creates all GUI components including confidence threshold controls
-- `start_processing()`: Validates inputs, gets confidence threshold, and spawns worker thread
-- `cancel_processing()`: Gracefully stops processing
-- `_validate_inputs()`: Ensures valid folder paths and template file
-- `_apply_stylesheet()`: Applies CSS-like styling
-- `_set_ui_enabled()`: Enables/disables UI elements during processing
+**Critical Methods**:
+- `init_ui()` - Creates GUI with confidence threshold controls (slider + spinbox)
+- `start_processing()` - Validates inputs, spawns worker thread
+- `cancel_processing()` - Stops processing gracefully
+- `on_processing_finished()` - **v2.1.1**: Properly terminates thread with `quit()` + `wait()`, sets references to `None`
+- `on_processing_error()` - **v2.1.1**: Same thread cleanup for error cases
 
-**Threading Model**: Qt Signal-Slot architecture for non-blocking UI
+**Threading Model**: Qt Signal-Slot, QThread for background processing
 
-**New Features** (v2.1):
-- **Confidence Threshold Control**: Interactive slider and spinbox for adjusting minimum confidence
-  - Default: 0.5 (50%)
-  - Range: 0.0 (no filtering) to 1.0 (very strict)
-  - Synced slider and spinbox with real-time percentage display
-  - Tooltips explaining recommended values (0.4-0.6)
-  - Disabled during processing to prevent mid-operation changes
+**New in v2.1**:
+- Confidence threshold slider/spinbox (0.0-1.0, default 0.5)
+- Recent paths dropdown (last 5 folders/files)
+- **v2.1.1 Fix**: Proper thread cleanup prevents "Processing In Progress" warning after completion
 
 ---
 
 ### processing_worker.py (109 lines)
-**Purpose**: Background worker for PDF processing in separate thread
+**Background worker for PDF processing**
 
-**Key Class**: `ProcessingWorker(QObject)`
+**Signals**: `progress_updated(int)`, `log_message(str, str)`, `finished(str)`, `error_occurred(str, str)`
 
-**Signals**:
-- `progress_updated(int)`: Progress percentage (0-100)
-- `log_message(str, str)`: Log messages with level
-- `finished(str)`: Success completion
-- `error_occurred(str, str)`: Error reporting
-
-**Processing Steps**:
-1. Load keywords from configuration
-2. Get all PDF files (excluding "Tagged" PDFs)
-3. Process each PDF via `requirement_bot()`
-4. Generate Excel and highlighted PDF outputs
-5. Create summary LOG.txt file
-
-**AI Assistant Note**: When debugging processing issues, check this worker's `run()` method first.
+**Pipeline**: Load keywords → Get PDFs (exclude "Tagged") → Process each → Generate outputs → Create LOG.txt
 
 ---
 
 ### RB_coordinator.py (~72 lines)
-**Purpose**: Orchestrates the main processing pipeline
+**Orchestrates processing pipeline**
 
-**Key Function**: `requirement_bot(path_in, cm_path, words_to_find, path_out)`
+**Main Function**: `requirement_bot(path_in, cm_path, words_to_find, path_out)`
 
 **Pipeline Steps**:
-1. **Extract**: Call `pdf_analyzer.requirement_finder()`
-2. **Generate Excel**: Copy template and call `excel_writer.write_excel_file()`
-3. **Export BASIL**: Call `basil_integration.export_to_basil()` ⭐ *NEW!*
-4. **Annotate PDF**: Call `highlight_requirements.highlight_requirements()`
+1. Extract: `pdf_analyzer.requirement_finder()`
+2. Excel: `excel_writer.write_excel_file()`
+3. BASIL: `basil_integration.export_to_basil()` (try-except wrapped)
+4. Annotate: `highlight_requirements.highlight_requirements()`
 
-**Output Naming Convention**:
-```
-Format: YYYY.MM.DD_[Type]_[OriginalFilename].ext
-Examples:
-- 2025.11.17_Compliance Matrix_spec.xlsx
-- 2025.11.17_BASIL_Export_spec.jsonld ⭐ NEW
-- 2025.11.17_Tagged_spec.pdf
-```
-
-**Error Handling**:
-- BASIL export wrapped in try-except block
-- Workflow continues even if BASIL export fails
-- All operations logged (info, warning, error)
-
-**AI Assistant Note**: This is the central coordination point. BASIL export is now automatically generated alongside Excel and PDF outputs.
+**Output Naming**: `YYYY.MM.DD_[Type]_[OriginalFilename].ext`
 
 ---
 
 ### pdf_analyzer.py (~330 lines)
-**Purpose**: NLP-based requirement extraction from PDFs with advanced quality controls
+**NLP-based requirement extraction with quality controls**
 
 **Key Functions**:
-- `get_nlp_model()` - Lazy-load and cache spaCy model (Phase 2)
-- `preprocess_pdf_text(text)` - Clean and normalize PDF text (Phase 2)
-- `extract_text_with_layout(page)` - Multi-column layout handling (Phase 3)
-- `matches_requirement_pattern(sentence)` - Pattern-based detection (Phase 3)
-- `calculate_requirement_confidence(sentence, keyword, word_count)` - Quality scoring (Phase 2)
-- `requirement_finder(path, keywords_set, filename)` - Main extraction function
+- `get_nlp_model()` - Lazy-load cached spaCy model
+- `preprocess_pdf_text(text)` - Clean/normalize (fix hyphens, remove page numbers)
+- `extract_text_with_layout(page)` - Multi-column support
+- `matches_requirement_pattern(sentence)` - Pattern detection (modal verbs, compliance indicators)
+- `calculate_requirement_confidence(...)` - Quality scoring (0.0-1.0)
+- `requirement_finder(path, keywords_set, filename)` - Main extraction
 
-**Algorithm** (Enhanced with Phases 1-3):
-1. **Extract text** from PDF using layout-aware extraction (Phase 3)
-   - Block-based extraction for multi-column support
-   - Proper reading order (top-to-bottom, left-to-right)
-2. **Preprocess text** to improve spaCy accuracy (Phase 2)
-   - Fix hyphenated words across lines
-   - Remove page numbers
-   - Normalize Unicode characters
-3. **Sentence segmentation** using cached spaCy model (Phase 2)
-4. **Validate sentence length** (Phase 1)
-   - MIN: 5 words, MAX: 100 words
-   - Prevents full-page highlights from parsing errors
-5. **Filter sentences** using exact word matching (Phase 1)
-   - Regex word boundaries (`\b\w+\b`)
-   - No substring matches
-6. **Calculate confidence score** (Phase 2)
-   - Based on length, patterns, keywords, structure
-   - Returns score 0.0-1.0
-7. **Pattern matching** for well-formed requirements (Phase 3)
-   - Modal verb patterns, compliance patterns, etc.
-8. **Assign labels and priority**
-
+**Algorithm**: Extract text → Preprocess → Segment sentences → Validate length → Filter by keywords → Calculate confidence → Pattern match → Assign priority
 
 **Priority Logic**:
-```python
-if "must" in text or "shall" in text:
-    priority = "high"
-elif "should" in text or "has to" in text:
-    priority = "medium"
-elif "security" in text:
-    priority = "security"
-else:
-    priority = "low"
-```
+- `must/shall` → high
+- `should/has to` → medium
+- `security` → security (overrides)
+- else → low
 
-**Returns**: Pandas DataFrame with columns:
-- `Label Number`, `Description`, `Page`, `Keyword`, `Raw`, `Confidence` *(new!)*, `Priority`, `Note`
+**Returns**: DataFrame with columns: `Label Number, Description, Page, Keyword, Raw, Confidence, Priority, Note`
 
-**Key Constants**:
-```python
-MIN_REQUIREMENT_LENGTH_WORDS = 5   # Phase 1
-MAX_REQUIREMENT_LENGTH_WORDS = 100 # Phase 1
-```
+---
 
 ### excel_writer.py (192 lines)
-**Purpose**: Excel compliance matrix generation
+**Excel compliance matrix generation**
 
 **Key Function**: `write_excel_file(df, excel_file)`
 
 **Features**:
-- Data written starting from **row 5** (rows 1-4 reserved for headers)
-- **Color-coded priorities**:
-  - High → Red (FF0000)
-  - Medium → Yellow (FFFF00)
-  - Low → Green (00FF00)
-- **Data validations**: Dropdown lists in columns I-O, M-N, U, W
-- **Formula insertion**: Column P calculates compliance scores
-
-**Expected Excel Structure**:
-- Sheet name: `"MACHINE COMP. MATRIX"`
-- Template file must contain: `"Compliance_Matrix_Template_rev001.xlsx"`
-
-**Data Validation Lists** (critical for Excel functionality):
-- Column I: Technical, Procedure, Legal, SW, HW, Safety
-- Column J: Machine, Product, Company
-- Column K: Concept, UTM, UTS, UTE, SW
-- Column M: Approved, Rejected, In discussion, Acquired
-- Column N: yes, partially, no
-- Column O: easy, medium, hard
-- Column U: completed, on going, blocked, failed
-- Column W: compliant, not compliant, partially compliant
-
-**AI Assistant Note**: When modifying Excel output, test thoroughly - formulas are complex and interdependent.
+- Data starts at **row 5** (rows 1-4 for headers)
+- Color-coded priorities: High=Red, Medium=Yellow, Low=Green
+- Data validations: Dropdowns in columns I-O, M-N, U, W
+- Formula in column P for compliance scores
+- Required sheet: `"MACHINE COMP. MATRIX"`
 
 ---
 
 ### highlight_requirements.py (~125 lines)
-**Purpose**: Adds visual highlights and annotations to PDFs with safety validations
+**Adds highlights and annotations to PDFs**
 
-**Key Function**: `highlight_requirements(filepath, requirements_list, note_list, page_list, out_pdf_name)`
-
-**Key Constants**:
-```python
-MAX_HIGHLIGHT_COVERAGE_PERCENT = 40  # Phase 1: Prevents full-page highlights
-```
-
-**Process** (Enhanced with Phases 1 & 3):
-1. Open original PDF with PyMuPDF
-2. For each requirement:
-   - Extract word coordinates from target page
-   - Find consecutive word sequence matching requirement
-   - Calculate bounding rectangle
-   - **Phase 1**: Validate highlight size
-     - Calculate coverage percentage vs page area
-     - Skip if > 40% of page (likely error)
-     - Add text-only annotation as fallback
-     - Log warning for user awareness
-   - **Phase 3**: Handle missed sequences
-     - If text not found, log detailed warning
-     - Add text-only annotation at page corner
-     - Ensures user is notified even without highlight
-   - Add yellow highlight annotation (type 8)
-   - Add text note annotation (type 0) with label and description
-3. Save encrypted PDF
+**Main Function**: `highlight_requirements(filepath, requirements_list, note_list, page_list, out_pdf_name)`
 
 **Safety Features**:
-- ✅ **Phase 1**: Prevents full-page highlights (>40% coverage)
-- ✅ **Phase 3**: Fallback annotations for unfound text
-- ✅ Comprehensive logging for debugging
+- Validates highlight size (max 40% page coverage)
+- Fallback text annotations if text not found or too large
+- Comprehensive logging
 
-**Annotation Types**:
-- Type 8: Yellow highlight
-- Type 0: Text note
-- Icon "Help": Used for oversized highlights
-- Icon "Note": Used for missed sequences
+**Annotation Types**: Type 8 (highlight), Type 0 (text note)
 
-**AI Assistant Note**: PDF coordinate system uses (x0, y0, x1, y1) format. All highlights now validated for size before rendering.
+---
+
+### basil_integration.py (465 lines)
+**Import/export requirements to/from BASIL SPDX 3.0.1 format**
+
+**Key Functions**:
+- `export_to_basil(df, output_path, created_by, document_name)` - Export to JSON-LD
+- `import_from_basil(input_path)` - Import from JSON-LD
+- `validate_basil_format(data)` - Validate SPDX compliance
+- `merge_basil_requirements(existing_df, imported_df, strategy)` - Merge strategies
+
+**Merge Strategies**: `append` (add all), `update` (update matching IDs), `replace` (replace all)
 
 ---
 
 ### config_RB.py (53 lines)
-**Purpose**: Configuration management for requirement keywords
+**Configuration management**
 
 **Key Function**: `load_keyword_config()`
 
-**Logic**:
-1. If `RBconfig.ini` doesn't exist → create with defaults
-2. If exists → read keywords
-3. If empty/corrupted → reinitialize with defaults
-4. Return set of normalized keywords
+**Default Keywords**: `ensure, scope, recommended, must, has to, ensuring, shall, should, ensures`
 
-**Default Keywords**:
-```
-ensure, scope, recommended, must, has to, ensuring,
-shall, should, ensures
-```
-
-**File Format**: INI file using Python's configparser
-```ini
-[DEFAULT_KEYWORD]
-word_set = ensure,scope,recommended,must,has to,ensuring,shall,should,ensures
-```
-
-**AI Assistant Note**: To add new keywords, edit `RBconfig.ini` or modify defaults in this module.
-
----
-
-### get_all_files.py (31 lines)
-**Purpose**: Utility for recursive file enumeration
-
-**Key Function**: `get_all(path, ext="")`
-
-**Features**:
-- Recursively finds files in directory tree
-- Returns sorted list by modification time (oldest first)
-- Optional extension filter
-- Normalizes paths to forward slashes
-
----
-
-### basil_integration.py (465 lines) ⭐ *NEW!*
-**Purpose**: Import/export requirements to/from BASIL using SPDX 3.0.1 format
-
-**Key Functions**:
-- `export_to_basil(df, output_path, created_by, document_name)` - Export to BASIL JSON-LD
-- `import_from_basil(input_path)` - Import from BASIL JSON-LD
-- `create_basil_requirement(req_id, title, description, ...)` - Create BASIL elements
-- `merge_basil_requirements(existing_df, imported_df, merge_strategy)` - Merge strategies
-- `validate_basil_format(data)` - Validate SPDX 3.0.1 compliance
-- `calculate_md5_hash(text)` - MD5 hash generation
-- `extract_requirement_id(label_number)` - Extract numeric ID from ReqBot labels
-
-**BASIL Format**:
-- SPDX 3.0.1 compliant JSON-LD
-- Software requirements as `software_File` elements with `primaryPurpose="requirement"`
-- Detailed metadata in `Annotation` elements with stringified JSON
-- MD5 hash verification for data integrity
-
-**Data Mapping**:
-- ReqBot DataFrame ↔ BASIL JSON-LD
-- Priority mapping (high↔CRITICAL, medium↔IN_PROGRESS, etc.)
-- Preserves all ReqBot metadata (page, keyword, confidence) in reqbot_metadata field
-
-**Merge Strategies**:
-- `"append"`: Add all imported requirements
-- `"update"`: Update matching IDs, add new ones
-- `"replace"`: Replace all existing with imported
-
-**Returns**:
-- Export: `bool` (success/failure)
-- Import: `pd.DataFrame` (empty on failure)
-- Validate: `Tuple[bool, str]` (is_valid, message)
-- Merge: `pd.DataFrame` (merged data)
-
-**AI Assistant Note**: See [BASIL Integration](#basil-integration) section for detailed usage examples and integration workflows.
-
----
-
-### run_app.py (65 lines)
-**Purpose**: Interactive launcher with menu system
-
-**Functions**:
-- `run_gui_app()`: Launches main_app.py in subprocess
-- `run_tests()`: Runs pytest test suite
-
-**AI Assistant Note**: Use this as entry point when testing the full application flow.
+**File Format**: INI using configparser
 
 ---
 
@@ -400,142 +199,69 @@ word_set = ensure,scope,recommended,must,has to,ensuring,shall,should,ensures
 ```
 User Input (GUI)
     ↓
-[main_app.py] - Validate inputs
+[main_app.py] Validate inputs
     ↓
-[processing_worker.py] - Background thread starts
-    ↓
-[get_all_files.py] - Enumerate PDFs (exclude "Tagged_*.pdf")
+[processing_worker.py] Background thread
     ↓
 FOR EACH PDF:
-    │
-    ├─→ [config_RB.py] - Load keywords from RBconfig.ini
-    │
-    ├─→ [RB_coordinator.py] - Orchestrate pipeline
-    │    │
-    │    ├─→ [pdf_analyzer.py]
-    │    │    └─→ spaCy NLP processing
-    │    │    └─→ Return: Pandas DataFrame
-    │    │
-    │    ├─→ [excel_writer.py]
-    │    │    └─→ Load template Excel
-    │    │    └─→ Add data, colors, validations, formulas
-    │    │    └─→ Save: YYYY.MM.DD_Compliance Matrix_file.xlsx
-    │    │
-    │    ├─→ [basil_integration.py] ⭐ NEW
-    │    │    └─→ Convert DataFrame to SPDX 3.0.1
-    │    │    └─→ Save: YYYY.MM.DD_BASIL_Export_file.jsonld
-    │    │
-    │    └─→ [highlight_requirements.py]
-    │         └─→ Add highlights and annotations
-    │         └─→ Save: YYYY.MM.DD_Tagged_file.pdf
-    │
-    └─→ Update progress signals
-    └─→ Write to LOG.txt
-
-Final Output:
-├─ Multiple *.xlsx (Compliance Matrices)
-├─ Multiple *.jsonld (BASIL SPDX Exports) ⭐ NEW
-├─ Multiple *.pdf (Tagged PDFs)
-└─ LOG.txt (Summary)
+    ├─ [config_RB.py] Load keywords
+    ├─ [RB_coordinator.py] Orchestrate:
+    │   ├─ [pdf_analyzer.py] Extract → DataFrame
+    │   ├─ [excel_writer.py] Generate compliance matrix
+    │   ├─ [basil_integration.py] Export SPDX JSON-LD
+    │   └─ [highlight_requirements.py] Annotate PDF
+    └─ Update progress
+    ↓
+Output: *.xlsx, *.jsonld, *_Tagged.pdf, LOG.txt
 ```
 
-### Key Data Structure: Requirements DataFrame
+### Requirements DataFrame Structure
 
 ```python
-DataFrame columns:
 {
-    'Label Number': 'filename-Req#1-1',      # Unique ID
-    'Description': 'The system shall...',    # Cleaned text
-    'Page': 1,                               # Page number
-    'Keyword': 'shall',                      # Matching keyword
-    'Raw': ['The', 'system', 'shall', ...],  # Word list for highlighting
-    'Note': 'filename-Req#1-1:The system...', # Combined label + description
-    'Priority': 'high'                       # Calculated priority
+    'Label Number': 'filename-Req#1-1',
+    'Description': 'The system shall...',
+    'Page': 1,
+    'Keyword': 'shall',
+    'Raw': ['The', 'system', 'shall', ...],
+    'Confidence': 0.85,  # NEW in v2.0
+    'Priority': 'high',
+    'Note': 'filename-Req#1-1:The system...'
 }
 ```
-
-**AI Assistant Note**: This DataFrame is the central data structure. All modules expect these exact column names.
 
 ---
 
 ## Development Workflows
 
-### Setting Up Development Environment
+### Setup
 
 ```bash
-# 1. Clone repository
+# 1. Clone and setup
 git clone <repository-url>
 cd ReqBot
-
-# 2. Install dependencies (create requirements.txt if needed)
-pip install PySide6 PyMuPDF spacy pandas openpyxl pytest pytest-qt
-
-# 3. Download spaCy model
+python -m venv .venv
+.venv\Scripts\activate  # Windows
+pip install -r requirements.txt
 python -m spacy download en_core_web_sm
 
-# 4. Run tests to verify setup
+# 2. Run tests
 pytest
 
-# 5. Launch application
+# 3. Launch app
 python main_app.py
-# OR
-python run_app.py
-```
-
-### Running the Application
-
-**Method 1: Direct GUI Launch**
-```bash
-python main_app.py
-```
-
-**Method 2: Interactive Menu**
-```bash
-python run_app.py
-# Then select option 1 for GUI
-```
-
-### Running Tests
-
-```bash
-# Run all tests
-pytest
-
-# Run specific test file
-pytest test_gui.py
-pytest test_excel_writer.py
-pytest test_highlight_requirements.py
-
-# Run with verbose output
-pytest -v
-
-# Run with coverage
-pytest --cov=.
 ```
 
 ### Typical Modification Workflow
 
-1. **Identify the module** to modify based on feature location:
-   - GUI changes → `main_app.py`
-   - Extraction logic → `pdf_analyzer.py`
-   - Excel output → `excel_writer.py`
-   - PDF annotation → `highlight_requirements.py`
-   - BASIL export/import → `basil_integration.py` ⭐
-   - Workflow changes → `RB_coordinator.py`
+1. **Identify module**: GUI→main_app.py, Extraction→pdf_analyzer.py, Excel→excel_writer.py, etc.
+2. **Write/modify tests** first (TDD)
+3. **Implement changes**
+4. **Run tests**: `pytest -v`
+5. **Test manually** with sample PDFs in `sampleIO/`
+6. **Commit** with descriptive message
 
-2. **Read existing code** to understand context
-
-3. **Write/modify tests** first (TDD approach)
-
-4. **Implement changes**
-
-5. **Run tests** to verify
-
-6. **Test manually** with sample PDFs in `sampleIO/`
-
-7. **Commit changes** with descriptive message
-
-### Adding New Features: Checklist
+### Adding New Features Checklist
 
 - [ ] Identify affected modules
 - [ ] Update relevant test files
@@ -543,124 +269,8 @@ pytest --cov=.
 - [ ] Update docstrings/comments
 - [ ] Run test suite
 - [ ] Test with real PDF files
-- [ ] Update this CLAUDE.md if architecture changes
+- [ ] Update CLAUDE.md if architecture changes
 - [ ] Commit with clear message
-
----
-
-## Code Conventions
-
-### Naming Conventions
-
-| Type | Convention | Examples |
-|------|------------|----------|
-| Functions | snake_case | `write_excel_file`, `requirement_finder` |
-| Classes | PascalCase | `RequirementBotApp`, `ProcessingWorker` |
-| Constants | UPPER_CASE | `CM_TEMPLATE_NAME`, `DEFAULT_KEYWORDS` |
-| Private members | _leading_underscore | `_worker_thread`, `_is_running` |
-| Module names | snake_case | `main_app.py`, `pdf_analyzer.py` |
-
-### Design Patterns Used
-
-1. **Observer Pattern**: Qt Signal-Slot mechanism
-   ```python
-   # Worker emits signals
-   self.progress_updated.emit(50)
-
-   # GUI connects slots
-   self.worker.progress_updated.connect(self.update_progress)
-   ```
-
-2. **Factory Pattern**: `_create_path_selector()` creates UI components
-
-3. **Singleton**: QApplication instance management
-
-4. **Template Method**: `ProcessingWorker.run()` defines processing skeleton
-
-### Code Style Guidelines
-
-**Logging**:
-```python
-import logging
-logger = logging.getLogger(__name__)
-
-# Usage
-logger.info("Processing started")
-logger.warning("Template missing column")
-logger.error(f"Failed to process {filename}: {str(e)}")
-```
-
-**Error Handling**:
-```python
-try:
-    # Processing code
-    result = process_pdf(path)
-except Exception as e:
-    logger.error(f"Error processing: {str(e)}")
-    self.error_occurred.emit(str(e), "Processing Error")
-    return
-```
-
-**Threading**:
-```python
-# Main thread creates worker
-self._worker = ProcessingWorker(...)
-self._worker_thread = QThread()
-self._worker.moveToThread(self._worker_thread)
-
-# Connect signals BEFORE starting thread
-self._worker.finished.connect(self.on_finished)
-
-# Start thread
-self._worker_thread.start()
-```
-
-**File Operations**:
-```python
-# Always use absolute paths
-import os
-abs_path = os.path.abspath(relative_path)
-
-# Check existence before processing
-if not os.path.exists(file_path):
-    logger.error(f"File not found: {file_path}")
-    return
-```
-
-### Important Constants and Magic Values
-
-```python
-# Excel writing
-STARTING_ROW = 5  # Data starts at row 5 (1-4 are headers)
-SHEET_NAME = "MACHINE COMP. MATRIX"  # Required sheet name
-
-# File naming
-DATE_FORMAT = "%Y.%m.%d"  # YYYY.MM.DD
-CM_PREFIX = "Compliance Matrix"
-TAGGED_PREFIX = "Tagged"
-
-# Priority colors (RGB hex)
-COLOR_HIGH = "FF0000"     # Red
-COLOR_MEDIUM = "FFFF00"   # Yellow
-COLOR_LOW = "00FF00"      # Green
-
-# PDF annotation types
-HIGHLIGHT_TYPE = 8        # Yellow highlight
-TEXT_NOTE_TYPE = 0        # Text annotation
-
-# Time estimation
-ANALYSIS_TIME_PER_REQ = 5/60  # 5 minutes per requirement in hours
-```
-
-### Language Notes
-
-**Mixed Language Comments**: Legacy code contains Italian comments:
-- "requisiti" = requirements
-- "cartella" = folder
-- "percorso" = path
-- "parola" = word
-
-**AI Assistant Guideline**: When modifying code with Italian comments, you may translate to English for clarity, but preserve original meaning.
 
 ---
 
@@ -668,776 +278,170 @@ ANALYSIS_TIME_PER_REQ = 5/60  # 5 minutes per requirement in hours
 
 ### Test Structure
 
-```
-ReqBot/
-├─ test_gui.py                         # GUI component tests (80 lines)
-├─ test_excel_writer.py                # Excel generation tests (149 lines)
-├─ test_highlight_requirements.py      # PDF highlighting tests (78 lines)
-├─ test_basil_integration.py           # BASIL integration tests (470 lines) ⭐ NEW
-├─ test_basil_simple.py                # BASIL core tests (330 lines) ⭐ NEW
-├─ test_basil_import.py                # BASIL import tests (270 lines) ⭐ NEW
-├─ test_integration.py                 # Full integration test (249 lines) ⭐ NEW
-└─ test_integration_simple.py          # Simple integration test (266 lines) ⭐ NEW
-```
-
-### Test Framework
-
-- **Framework**: pytest
-- **GUI Testing**: pytest-qt plugin
-- **Fixtures**: Temporary files, mock dialogs
-- **Isolation**: Each test creates/cleans up temporary resources
-
-### Key Test Files
-
-#### test_gui.py
-**Tests**: GUI initialization, user interactions, threading
-
-**Fixtures**:
-```python
-@pytest.fixture(scope="module")
-def app():
-    """QApplication instance for all tests"""
-
-@pytest.fixture
-def gui(app):
-    """RequirementBotApp instance"""
-```
-
-**Key Tests**:
-- `test_initial_state`: Verify default GUI state
-- `test_input_folder_field`: Test folder selection
-- `test_progress_bar_updates`: Test progress updates
-- `test_task_finished_shows_messagebox`: Test completion message
-
-**AI Assistant Note**: When adding GUI features, add corresponding tests here.
-
----
-
-#### test_excel_writer.py
-**Tests**: Excel file generation, formatting, formulas
-
-**Fixtures**:
-```python
-@pytest.fixture
-def empty_compliance_matrix_template(tmp_path):
-    """Creates temporary Excel template"""
-```
-
-**Key Tests**:
-- `test_write_excel_file_data_and_priority_fills`: Data writing + color coding
-- `test_write_excel_file_data_validations`: Dropdown validation rules
-- `test_write_excel_file_formulas`: Formula insertion
-
-**Validation Checks**:
-```python
-# Verify data written
-assert ws['A5'].value == expected_value
-
-# Verify color coding
-assert ws['H5'].fill.start_color.rgb == expected_color
-
-# Verify data validation
-assert ws['I5'].data_validation is not None
-
-# Verify formulas
-assert ws['P5'].value.startswith('=IF')
-```
-
-**AI Assistant Note**: Excel tests are critical - formulas are complex. Always run these after Excel modifications.
-
----
-
-#### test_highlight_requirements.py
-**Tests**: PDF highlighting and annotation
-
-**Fixtures**:
-```python
-@pytest.fixture
-def sample_pdf(tmp_path):
-    """Creates temporary test PDF with sample text"""
-```
-
-**Key Tests**:
-- `test_highlight_requirements_basic`: Successful highlighting
-- `test_highlight_requirements_no_match`: Handles non-matching text
-
-**Verification**:
-```python
-# Count annotations
-highlight_count = sum(1 for annot in page.annots() if annot.type[0] == 8)
-note_count = sum(1 for annot in page.annots() if annot.type[0] == 0)
-
-assert highlight_count == expected_highlights
-assert note_count == expected_notes
-```
-
-**AI Assistant Note**: PDF tests use PyMuPDF's annotation types. Type 8 = highlight, Type 0 = text note.
-
----
-
-#### test_basil_integration.py ⭐ *NEW*
-**Tests**: Comprehensive BASIL integration testing (requires pandas)
-
-**Test Classes**:
-- `TestUtilityFunctions`: Hash calculation, ID extraction, element creation
-- `TestExportFunctionality`: Export validation, content verification, metadata preservation
-- `TestImportFunctionality`: Import validation, content mapping, error handling
-- `TestRoundTrip`: Export-import integrity verification
-- `TestValidation`: SPDX format validation
-- `TestMergeStrategies`: Append, update, replace strategies
-
-**Key Tests**:
-- 25+ test cases covering all BASIL functionality
-- Export/import round-trip verification
-- Data integrity checks
-- Error handling validation
-- All merge strategies tested
-
-**Run tests**:
-```bash
-pytest test_basil_integration.py -v
-```
-
-**AI Assistant Note**: Full test suite for BASIL integration. See [BASIL Integration](#basil-integration) section for details.
-
----
-
-#### test_basil_simple.py ⭐ *NEW*
-**Tests**: Core BASIL functionality without pandas dependency
-
-**Key Tests** (8 test cases):
-1. MD5 hash calculation
-2. Requirement ID extraction (5 test cases)
-3. BASIL element creation
-4. SPDX document generation
-5. File I/O operations
-6. Format validation
-7. Round-trip data integrity
-8. Hash verification
-
-**Run tests**:
-```bash
-python3 test_basil_simple.py
-```
-
-**AI Assistant Note**: Standalone tests that don't require pandas. Useful for quick verification.
-
----
-
-#### test_basil_import.py ⭐ *NEW*
-**Tests**: BASIL import and validation functionality
-
-**Test Suites** (5 suites):
-1. Format validation
-2. Requirements import
-3. Data verification
-4. Round-trip integrity
-5. Error handling (invalid files, malformed JSON, missing fields)
-
-**Run tests**:
-```bash
-python3 test_basil_import.py
-```
-
----
-
-#### test_integration_simple.py ⭐ *NEW*
-**Tests**: Integration verification without dependencies
-
-**Test Categories** (7 tests):
-1. Verify imports in RB_coordinator.py
-2. Verify export_to_basil() integration
-3. Verify BASIL output file naming
-4. Verify error handling
-5. Verify workflow execution order
-6. Verify output naming convention
-7. Verify code section structure
-
-**Run tests**:
-```bash
-python3 test_integration_simple.py
-```
-
-**AI Assistant Note**: Verifies integration correctness by analyzing code structure. All tests passed ✓
-
----
+- `test_gui.py` - GUI components (8 tests)
+- `test_excel_writer.py` - Excel generation (3 tests)
+- `test_highlight_requirements.py` - PDF highlighting (2 tests)
+- `test_basil_integration.py` - BASIL integration (25 tests)
+- `test_integration*.py` - End-to-end workflows
 
 ### Running Tests
 
 ```bash
-# All tests (requires pytest and pandas)
-pytest
-
-# Specific file
-pytest test_excel_writer.py
-
-# BASIL integration tests (requires pandas)
-pytest test_basil_integration.py -v
-
-# BASIL standalone tests (no pandas required)
-python3 test_basil_simple.py
-python3 test_basil_import.py
-python3 test_integration_simple.py
-
-# Specific test
-pytest test_gui.py::test_initial_state
-
-# Verbose output
+# All tests
 pytest -v
 
-# Show print statements
-pytest -s
+# Specific file
+pytest test_gui.py
 
-# Stop on first failure
-pytest -x
+# Specific test
+pytest test_gui.py::test_threading_fix_prevents_double_start
 
-# Coverage report
+# With coverage
 pytest --cov=. --cov-report=html
 ```
 
-### Test-Driven Development (TDD) Workflow
+### Key Test: Threading Fix (v2.1.1)
 
-1. **Write failing test** for new feature
-2. **Run test** to confirm it fails
-3. **Implement minimum code** to pass test
-4. **Run test** to confirm it passes
-5. **Refactor** if needed
-6. **Run all tests** to ensure no regressions
-
-**Example**:
 ```python
-# 1. Write test in test_pdf_analyzer.py
-def test_extract_security_requirements():
-    """Test that 'security' keyword creates 'security' priority"""
-    # Test implementation
-    assert result['Priority'][0] == 'security'
-
-# 2. Run: pytest test_pdf_analyzer.py::test_extract_security_requirements
-# (fails because feature not implemented)
-
-# 3. Implement in pdf_analyzer.py
-def requirement_finder(...):
-    # Add logic for security priority
-    if 'security' in sentence_text.lower():
-        priority = 'security'
-
-# 4. Run test again (passes)
-
-# 5. Run all tests: pytest
+# test_gui.py::test_threading_fix_prevents_double_start
+def test_threading_fix_prevents_double_start(gui):
+    """Verify double-start prevention and thread cleanup"""
+    # Simulate processing
+    # Verify warning shown on double-click
+    # Verify logger warning generated
 ```
 
 ---
 
 ## Common Tasks
 
-### Task 1: Adding a New Requirement Keyword
+### Task 1: Add New Keyword
 
-**Files to modify**: `config_RB.py`, `RBconfig.ini`
+**File**: `RBconfig.ini`
 
-**Steps**:
-
-1. **Edit RBconfig.ini**:
 ```ini
 [DEFAULT_KEYWORD]
-word_set = ensure,scope,recommended,must,has to,ensuring,shall,should,ensures,required
-                                                                                 ^^^^^^^^ (add new keyword)
+word_set = ensure,scope,...,new_keyword
 ```
 
-2. **Update default in config_RB.py** (optional, for auto-generation):
-```python
-default_word_set = "ensure,scope,recommended,must,has to,ensuring,shall,should,ensures,required"
-```
-
-3. **Test**: Process a PDF containing the new keyword
-
-**AI Assistant Note**: Keywords are case-insensitive. The system will find "REQUIRED", "Required", "required".
+Keywords are case-insensitive. Restart processing to apply.
 
 ---
 
-### Task 2: Adding a New Priority Level
+### Task 2: Add New Priority Level
 
-**Files to modify**: `pdf_analyzer.py`, `excel_writer.py`
+**Files**: `pdf_analyzer.py`, `excel_writer.py`
 
-**Steps**:
-
-1. **Add logic in pdf_analyzer.py**:
 ```python
-def requirement_finder(path, keywords_set, filename):
-    # ...existing code...
+# pdf_analyzer.py - Add condition
+if "critical" in sentence_text.lower():
+    priority = "critical"
 
-    # Add new priority condition
-    if "critical" in sentence_text.lower():
-        priority = "critical"
-    elif "must" in sentence_text.lower() or "shall" in sentence_text.lower():
-        priority = "high"
-    # ...rest of logic...
-```
-
-2. **Add color mapping in excel_writer.py**:
-```python
+# excel_writer.py - Add color
 priority_colors = {
     'critical': 'FF00FF',  # Magenta
-    'high': 'FF0000',      # Red
-    'medium': 'FFFF00',    # Yellow
-    'low': '00FF00'        # Green
-}
-
-# Apply color
-fill_color = priority_colors.get(priority, 'FFFFFF')  # White default
-```
-
-3. **Write tests**:
-```python
-def test_critical_priority():
-    """Test that 'critical' keyword creates 'critical' priority"""
-    # Test implementation
-```
-
-4. **Test manually** with sample PDF
-
-**AI Assistant Note**: Consider backward compatibility with existing Excel templates.
-
----
-
-### Task 3: Modifying Excel Output Columns
-
-**Files to modify**: `excel_writer.py`, potentially `pdf_analyzer.py`
-
-**Steps**:
-
-1. **Update DataFrame columns** in `pdf_analyzer.py` (if adding data):
-```python
-df = pd.DataFrame({
-    'Label Number': label_numbers,
-    'Description': descriptions,
-    'Page': pages,
-    'Priority': priorities,
-    'Custom_Field': custom_data,  # New column
+    'high': 'FF0000',
     # ...
-})
-```
-
-2. **Update excel_writer.py** to write new column:
-```python
-def write_excel_file(df, excel_file):
-    # ...existing code...
-
-    for index, row in df.iterrows():
-        ws['A' + str(count)] = count - 4
-        ws['B' + str(count)] = row['Page']
-        # ... existing columns ...
-        ws['Z' + str(count)] = row['Custom_Field']  # New column
-```
-
-3. **Update tests** in `test_excel_writer.py`:
-```python
-def test_write_custom_field():
-    """Test that custom field is written to Excel"""
-    # Test implementation
-```
-
-4. **Update Excel template** if necessary
-
-**AI Assistant Note**: Be mindful of column letters and existing formulas that may reference them.
-
----
-
-### Task 4: Improving NLP Extraction Accuracy
-
-**Files to modify**: `pdf_analyzer.py`
-
-**Strategies**:
-
-1. **Improve sentence boundary detection**:
-```python
-# Use spaCy's sentence segmentation more carefully
-for sent in doc.sents:
-    # Filter out very short sentences
-    if len(sent.text.split()) < 5:
-        continue
-    # Process sentence
-```
-
-2. **Add context-aware filtering**:
-```python
-# Exclude sentences in certain contexts (e.g., headers, footers)
-if any(header_word in sentence.lower() for header_word in ['page', 'section', 'chapter']):
-    continue
-```
-
-3. **Improve keyword matching**:
-```python
-# Use word boundaries to avoid partial matches
-import re
-def contains_keyword(text, keyword):
-    pattern = r'\b' + re.escape(keyword) + r'\b'
-    return bool(re.search(pattern, text, re.IGNORECASE))
-```
-
-4. **Add requirement pattern recognition**:
-```python
-# Look for requirement patterns (e.g., "The system shall...")
-requirement_patterns = [
-    r'The \w+ (shall|must|should)',
-    r'\w+ (shall|must|should) (be|have|provide|support)',
-]
-```
-
-**AI Assistant Note**: Always test with diverse PDF samples. NLP accuracy varies with document formatting.
-
----
-
-### Task 5: Adding New Data Validation Dropdown
-
-**Files to modify**: `excel_writer.py`
-
-**Steps**:
-
-1. **Add new validation list** in `write_excel_file()`:
-```python
-# Existing validations...
-
-# Add new validation for column Y
-dv_custom = DataValidation(type="list", formula1='"Option1,Option2,Option3"')
-ws.add_data_validation(dv_custom)
-for count in range(5, 5 + len(df)):
-    dv_custom.add(ws['Y' + str(count)])
-```
-
-2. **Test** the validation:
-```python
-def test_write_excel_file_custom_validation():
-    """Test that custom validation is added to column Y"""
-    # ...create test DataFrame and Excel file...
-
-    # Open and verify
-    wb = load_workbook(excel_path)
-    ws = wb.active
-
-    # Check that validation exists
-    assert ws['Y5'].data_validation is not None
-
-    # Verify validation formula
-    dv = ws['Y5'].data_validation
-    assert 'Option1' in dv.formula1
-```
-
-**AI Assistant Note**: Excel data validations are powerful but can slow down large files. Test with realistic data sizes.
-
----
-
-### Task 6: Debugging Processing Issues
-
-**Common Issues and Solutions**:
-
-**Issue**: "Processing stuck at X%"
-- **Check**: `processing_worker.py` - Look for exceptions in `run()` method
-- **Debug**: Add logging statements to identify where it's stuck
-```python
-logger.info(f"Processing file {i+1} of {total_files}")
-logger.info(f"Starting requirement extraction for {pdf_path}")
-```
-
-**Issue**: "No requirements found in PDF"
-- **Check**: `pdf_analyzer.py` - Verify text extraction is working
-```python
-# Debug text extraction
-text = page.get_text("text")
-logger.debug(f"Extracted text from page {page_num}: {text[:100]}...")
-```
-- **Check**: Keywords are correct in `RBconfig.ini`
-- **Check**: spaCy model is loaded correctly
-
-**Issue**: "Excel file corrupted or won't open"
-- **Check**: `excel_writer.py` - Verify template path is correct
-- **Check**: Sheet name matches exactly: "MACHINE COMP. MATRIX"
-- **Debug**: Open Excel in openpyxl and inspect:
-```python
-from openpyxl import load_workbook
-wb = load_workbook('output.xlsx')
-print(wb.sheetnames)  # Verify sheet names
-```
-
-**Issue**: "PDF highlights not appearing"
-- **Check**: `highlight_requirements.py` - Verify word matching logic
-- **Debug**: Print bounding rectangles:
-```python
-logger.debug(f"Highlight rect: {rect}")
-```
-- **Check**: PDF might be scanned (image-based, not text)
-
-**Issue**: "GUI freezes during processing"
-- **Check**: Threading is working correctly in `main_app.py`
-- **Verify**: Worker is moved to separate thread:
-```python
-assert self._worker.thread() == self._worker_thread
-```
-
-**AI Assistant Note**: Always check logs first (`application_gui.log`). Most issues are logged.
-
----
-
-### Task 7: Adding Internationalization (i18n)
-
-**Current State**: Mixed English/Italian comments, English UI
-
-**To Add Full i18n**:
-
-1. **Use Qt's translation system**:
-```python
-from PySide6.QtCore import QTranslator, QLocale
-
-# In main_app.py
-translator = QTranslator()
-translator.load(QLocale.system(), 'reqbot', '_', 'translations')
-app.installTranslator(translator)
-```
-
-2. **Wrap all user-facing strings**:
-```python
-# Before
-self.start_btn.setText("Start Processing")
-
-# After
-self.start_btn.setText(self.tr("Start Processing"))
-```
-
-3. **Create translation files**:
-```bash
-pylupdate6 main_app.py -ts translations/reqbot_it.ts
-pylupdate6 main_app.py -ts translations/reqbot_es.ts
-```
-
-4. **Translate with Qt Linguist** (GUI tool)
-
-5. **Compile translations**:
-```bash
-lrelease translations/reqbot_it.ts -qm translations/reqbot_it.qm
-```
-
-**AI Assistant Note**: Consider standardizing all comments to English for better maintainability.
-
----
-
-## Important Quirks
-
-### Quirk 1: "Tagged" PDFs are Excluded
-
-**Behavior**: PDFs with "Tagged" in the filename are automatically skipped during processing.
-
-**Location**: `processing_worker.py`
-```python
-if "Tagged" in pdf_path:
-    continue  # Skip already processed PDFs
-```
-
-**Reason**: Prevents re-processing of output PDFs that were previously highlighted.
-
-**AI Assistant Note**: If you need to reprocess a tagged PDF, rename it to remove "Tagged" from the filename.
-
----
-
-### Quirk 2: Excel Data Starts at Row 5
-
-**Behavior**: All data is written starting from Excel row 5, not row 1.
-
-**Location**: `excel_writer.py`
-```python
-STARTING_ROW = 5
-for index, row in df.iterrows():
-    count = index + STARTING_ROW
-    ws['A' + str(count)] = ...
-```
-
-**Reason**: Rows 1-4 are reserved for headers and formatting in the template.
-
-**AI Assistant Note**: When debugging Excel issues, remember row 1 ≠ first data row.
-
----
-
-### Quirk 3: Mixed Language Comments
-
-**Behavior**: Some code comments are in Italian, others in English.
-
-**Examples**:
-```python
-# Italian
-"# Trova tutti i file PDF nella cartella"  # Find all PDF files in folder
-
-# English
-"# Extract text from PDF page"
-```
-
-**AI Assistant Note**: When modifying code, you may translate Italian comments to English for consistency.
-
----
-
-### Quirk 4: Hardcoded Excel Sheet Name
-
-**Behavior**: Excel template MUST have a sheet named exactly "MACHINE COMP. MATRIX".
-
-**Location**: `excel_writer.py`
-```python
-ws = wb['MACHINE COMP. MATRIX']  # Will fail if sheet doesn't exist
-```
-
-**Reason**: Legacy template structure.
-
-**AI Assistant Note**: If changing sheet name, update both template and code. Consider making this configurable.
-
----
-
-### Quirk 5: Time Estimation Formula
-
-**Behavior**: LOG.txt contains estimated analysis time using magic number `5/60`.
-
-**Location**: `processing_worker.py`
-```python
-estimated_time = len(df) * (5 / 60)  # 5 minutes per requirement in hours
-```
-
-**Reason**: Assumed 5 minutes of manual review per requirement.
-
-**AI Assistant Note**: This is an estimate for human review time, not actual processing time.
-
----
-
-### Quirk 6: Priority "security" Overrides Others
-
-**Behavior**: If text contains "security", priority is "security" regardless of other keywords.
-
-**Location**: `pdf_analyzer.py`
-```python
-if "security" in sentence_text.lower():
-    priority = "security"
-elif "must" in sentence_text.lower() or "shall" in sentence_text.lower():
-    priority = "high"
-# ...
-```
-
-**Implication**: A sentence like "The system must ensure security" → priority = "security", not "high"
-
-**AI Assistant Note**: Consider if this priority hierarchy is intended or should be modified.
-
----
-
-### Quirk 7: Relative Path Assumptions
-
-**Behavior**: Code assumes `RBconfig.ini` is in the current working directory.
-
-**Location**: `config_RB.py`
-```python
-parser.read('RBconfig.ini')  # Relative path
-```
-
-**Implication**: Application must be run from the project root directory.
-
-**AI Assistant Note**: Consider using absolute paths or `__file__` for more robustness:
-```python
-import os
-config_path = os.path.join(os.path.dirname(__file__), 'RBconfig.ini')
-parser.read(config_path)
+}
 ```
 
 ---
 
-### Quirk 8: spaCy Model Must Be Downloaded
+### Task 3: Modify Excel Output
 
-**Behavior**: Application requires `en_core_web_sm` spaCy model to be pre-downloaded.
+**Files**: `pdf_analyzer.py` (if adding data), `excel_writer.py`
 
-**Installation**:
-```bash
-python -m spacy download en_core_web_sm
-```
-
-**Error if Missing**: Import will fail in `pdf_analyzer.py`:
 ```python
-import spacy
-nlp = spacy.load("en_core_web_sm")  # Fails if not downloaded
+# Add column to DataFrame
+df['Custom_Field'] = custom_data
+
+# Write to Excel
+ws['Z' + str(count)] = row['Custom_Field']
 ```
 
-**AI Assistant Note**: Add this to setup instructions. Consider graceful fallback or auto-download.
+**Note**: Mind column letters and existing formulas.
 
 ---
 
-### Quirk 9: Excel Formulas are Language-Dependent
+### Task 4: Debug Processing Issues
 
-**Behavior**: Excel formulas use English function names (IF, AND, OR).
+**Common Issues**:
 
-**Location**: `excel_writer.py`
-```python
-formula = '=IF(AND(...), ...)'
-```
+| Issue | Check | Solution |
+|-------|-------|----------|
+| Stuck at X% | `processing_worker.py` logging | Add debug statements |
+| No requirements found | Keywords in `RBconfig.ini` | Verify keywords match |
+| Excel corrupted | Sheet name exact match | Must be `"MACHINE COMP. MATRIX"` |
+| No PDF highlights | Text-based PDF? | Check if scanned (OCR needed) |
+| GUI freezes | Threading working? | Verify worker moved to thread |
 
-**Implication**: May not work correctly in non-English Excel installations (e.g., Italian uses `SE` instead of `IF`).
-
-**AI Assistant Note**: Excel formulas are stored in English and auto-translated by Excel. This should work across locales.
+**Always check**: `application_gui.log` first
 
 ---
 
-### Quirk 10: No Type Hints
+## Important Notes
 
-**Behavior**: Codebase doesn't use Python type hints.
+### Critical Quirks
 
-**Example**:
-```python
-# Current
-def requirement_finder(path, keywords_set, filename):
-    ...
+1. **"Tagged" PDFs Excluded**: Files with "Tagged" in name are skipped during processing
+2. **Excel Row 5 Start**: Data written from row 5 (rows 1-4 reserved for headers)
+3. **Sheet Name Required**: Excel template MUST have sheet `"MACHINE COMP. MATRIX"`
+4. **spaCy Model Required**: Must run `python -m spacy download en_core_web_sm`
+5. **Thread Cleanup (v2.1.1)**: `quit()` + `wait()` + set to `None` required for proper cleanup
+6. **Priority "security" Overrides**: If text contains "security", priority is "security" regardless of other keywords
 
-# With type hints (not used)
-def requirement_finder(path: str, keywords_set: set, filename: str) -> pd.DataFrame:
-    ...
+### File Naming Convention
+
+```
+YYYY.MM.DD_[Type]_[OriginalFilename].ext
+
+Examples:
+- 2025.11.18_Compliance Matrix_spec.xlsx
+- 2025.11.18_BASIL_Export_spec.jsonld
+- 2025.11.18_Tagged_spec.pdf
 ```
 
-**AI Assistant Note**: Consider adding type hints in future refactoring for better IDE support and error detection.
+### Code Style
+
+**Naming**: Functions=snake_case, Classes=PascalCase, Constants=UPPER_CASE
+
+**Logging**:
+```python
+import logging
+logger = logging.getLogger(__name__)
+logger.info("Processing started")
+logger.error(f"Failed: {str(e)}")
+```
+
+**Error Handling**:
+```python
+try:
+    result = process_pdf(path)
+except Exception as e:
+    logger.error(f"Error: {str(e)}")
+    self.error_occurred.emit(str(e), "Error Title")
+```
 
 ---
 
 ## Dependencies
 
-### Runtime Dependencies
+### Runtime
 
-| Library | Version | Purpose | Installation |
-|---------|---------|---------|--------------|
-| **PySide6** | Latest | Qt GUI framework | `pip install PySide6` |
-| **PyMuPDF (fitz)** | Latest | PDF reading/writing | `pip install PyMuPDF` |
-| **spaCy** | Latest | NLP processing | `pip install spacy` |
-| **en_core_web_sm** | Latest | spaCy English model | `python -m spacy download en_core_web_sm` |
-| **Pandas** | Latest | DataFrame operations | `pip install pandas` |
-| **openpyxl** | Latest | Excel file manipulation | `pip install openpyxl` |
+| Library | Purpose |
+|---------|---------|
+| PySide6 | Qt GUI framework |
+| PyMuPDF | PDF reading/writing |
+| spaCy + en_core_web_sm | NLP processing |
+| Pandas | DataFrame operations |
+| openpyxl | Excel manipulation |
 
-### Development Dependencies
+### Development
 
-| Library | Version | Purpose | Installation |
-|---------|---------|---------|--------------|
-| **pytest** | Latest | Test framework | `pip install pytest` |
-| **pytest-qt** | Latest | Qt testing utilities | `pip install pytest-qt` |
+- pytest, pytest-qt
 
-### Standard Library Dependencies
+### Installation
 
-- `configparser` - Configuration file parsing
-- `logging` - Application logging
-- `os`, `sys` - System operations
-- `subprocess` - Process management
-- `datetime` - Date/time handling
-- `re` - Regular expressions
-
-### Creating requirements.txt
-
-**AI Assistant Note**: The repository doesn't currently have a `requirements.txt`. Here's a recommended one:
-
-```txt
-PySide6>=6.0.0
-PyMuPDF>=1.18.0
-spacy>=3.0.0
-pandas>=1.3.0
-openpyxl>=3.0.0
-pytest>=6.0.0
-pytest-qt>=4.0.0
-```
-
-**To install**:
 ```bash
 pip install -r requirements.txt
 python -m spacy download en_core_web_sm
@@ -1445,67 +449,40 @@ python -m spacy download en_core_web_sm
 
 ---
 
-## File Structure Reference
+## File Structure
 
 ```
 ReqBot/
-├── .github/
-│   ├── workflows/
-│   │   └── qodana_code_quality.yml    # CI/CD pipeline
-│   └── ISSUE_TEMPLATE/
-│       └── bug_report.md
-├── sampleIO/
-│   ├── Compliance_Matrix_Template_rev001.xlsx  # Excel template
-│   ├── test_output/                            # Example outputs
-│   ├── Immagine.png                            # Screenshots
-│   └── Immagine_2.png
-├── main_app.py                        # GUI application (386 lines)
-├── processing_worker.py               # Background worker (109 lines)
-├── RB_coordinator.py                  # Pipeline orchestrator (49 lines)
-├── pdf_analyzer.py                    # NLP extraction (76 lines)
-├── excel_writer.py                    # Excel generation (192 lines)
-├── highlight_requirements.py          # PDF annotation (76 lines)
-├── basil_integration.py               # BASIL import/export (465 lines) ⭐ NEW
-├── config_RB.py                       # Configuration loader (53 lines)
-├── get_all_files.py                   # File utilities (31 lines)
-├── run_app.py                         # Launcher menu (65 lines)
-├── test_gui.py                        # GUI tests (80 lines)
-├── test_excel_writer.py               # Excel tests (149 lines)
-├── test_highlight_requirements.py     # PDF tests (78 lines)
-├── test_basil_integration.py          # BASIL integration tests (470 lines) ⭐ NEW
-├── RBconfig.ini                       # Keyword configuration
-├── qodana.yaml                        # Code quality config
-├── README.md                          # Brief description
-├── LICENSE                            # License file
-├── .gitignore                         # Git ignore rules
-└── CLAUDE.md                          # This file
+├── main_app.py              # GUI application (v2.1.1 threading fix)
+├── processing_worker.py     # Background thread worker
+├── RB_coordinator.py        # Pipeline orchestrator
+├── pdf_analyzer.py          # NLP extraction (enhanced v2.0)
+├── excel_writer.py          # Excel matrix generator
+├── highlight_requirements.py # PDF annotation (enhanced v2.0)
+├── basil_integration.py     # BASIL SPDX 3.0.1 export/import
+├── config_RB.py             # Configuration manager
+├── get_all_files.py         # File utilities
+├── RBconfig.ini             # Keyword configuration
+├── CLAUDE.md                # This file (AI assistant guide)
+├── README.md                # Project README
+├── TODO.md                  # Project roadmap
+└── tests/                   # Test suite (270+ tests)
 ```
-
-**Total Lines of Code**: ~1,809 (excluding tests and config)
-- Core application: ~1,344 lines
-- BASIL integration: ~465 lines (NEW)
 
 ---
 
-## Quick Reference: Module Dependencies
+## Module Dependencies
 
 ```
 main_app.py
-    └─→ processing_worker.py
-            └─→ RB_coordinator.py
-                    ├─→ pdf_analyzer.py (depends on: spacy, fitz, pandas)
-                    ├─→ excel_writer.py (depends on: openpyxl, pandas)
-                    └─→ highlight_requirements.py (depends on: fitz)
-            └─→ config_RB.py (depends on: configparser)
-            └─→ get_all_files.py (depends on: os)
-
-run_app.py
-    └─→ main_app.py (subprocess launch)
-    └─→ pytest (subprocess launch)
-
-basil_integration.py ⭐ NEW (standalone module)
-    └─→ pandas, json, hashlib, datetime
-    └─→ Can be integrated into RB_coordinator.py or used independently
+ └─ processing_worker.py
+     └─ RB_coordinator.py
+         ├─ pdf_analyzer.py (spacy, fitz, pandas)
+         ├─ excel_writer.py (openpyxl, pandas)
+         ├─ basil_integration.py (json, pandas)
+         └─ highlight_requirements.py (fitz)
+     └─ config_RB.py (configparser)
+     └─ get_all_files.py (os)
 ```
 
 ---
@@ -1513,73 +490,32 @@ basil_integration.py ⭐ NEW (standalone module)
 ## Best Practices for AI Assistants
 
 ### When Reading Code
-
-1. **Start with RB_coordinator.py** - It's the orchestrator and shows the big picture
-2. **Check tests** - They document expected behavior
-3. **Read docstrings** - Even minimal ones provide context
-4. **Follow imports** - Understand dependencies
-5. **Check git history** - See why changes were made (if available)
+1. Start with `RB_coordinator.py` for big picture
+2. Check tests for expected behavior
+3. Read docstrings for context
+4. Follow imports to understand dependencies
 
 ### When Writing Code
-
-1. **Match existing style** - Maintain consistency
-2. **Add logging** - Use the existing logger, don't print()
-3. **Update tests** - Add/modify tests for new features
-4. **Handle errors** - Use try-except with logging
-5. **Document changes** - Add comments for complex logic
-6. **Test with real PDFs** - Don't trust unit tests alone
+1. Match existing style
+2. Add logging (use logger, not print())
+3. Update tests for new features
+4. Handle errors with try-except + logging
+5. Document complex logic
+6. Test with real PDFs
 
 ### When Debugging
-
-1. **Check logs first** - `application_gui.log` contains valuable info
-2. **Run tests** - Isolate issues with unit tests
-3. **Use print debugging** - Add temporary logging statements
-4. **Test incrementally** - Don't change multiple things at once
-5. **Verify assumptions** - Check file paths, sheet names, column letters
+1. Check `application_gui.log` first
+2. Run tests to isolate issues
+3. Add temporary logging
+4. Test incrementally
+5. Verify assumptions (file paths, sheet names, etc.)
 
 ### When Refactoring
-
-1. **Run tests before** - Establish baseline
-2. **Make small changes** - Incremental refactoring
-3. **Run tests after each change** - Catch regressions early
-4. **Update documentation** - Keep CLAUDE.md current
-5. **Commit frequently** - Small, atomic commits
-
----
-
-## Contact and Support
-
-### Repository Information
-- **Primary Language**: Python
-- **GUI Framework**: PySide6 (Qt)
-- **License**: See LICENSE file
-
-### For AI Assistants
-
-When helping users with ReqBot:
-
-1. **Understand the context** - Is it a bug, feature request, or question?
-2. **Reference this guide** - Use the information provided here
-3. **Test your suggestions** - Verify code changes work as expected
-4. **Explain trade-offs** - Help users make informed decisions
-5. **Update this file** - If you discover new patterns or conventions
-
-### Common User Questions
-
-**Q: How do I add a new keyword?**
-A: Edit `RBconfig.ini` and add the keyword to the `word_set` list.
-
-**Q: Why aren't requirements being found?**
-A: Check that keywords match the PDF text, spaCy model is installed, and PDF is text-based (not scanned images).
-
-**Q: How do I change the Excel template?**
-A: Edit the template file, but keep sheet name "MACHINE COMP. MATRIX" and preserve row 1-4 for headers.
-
-**Q: Can I process scanned PDFs?**
-A: Not currently. The tool requires text-based PDFs. Consider OCR preprocessing.
-
-**Q: How do I change priority colors?**
-A: Edit the color hex codes in `excel_writer.py` in the priority fill section.
+1. Run tests before (establish baseline)
+2. Small changes (incremental)
+3. Run tests after each change
+4. Update documentation
+5. Commit frequently
 
 ---
 
@@ -1587,189 +523,64 @@ A: Edit the color hex codes in `excel_writer.py` in the priority fill section.
 
 | Version | Date | Changes |
 |---------|------|---------|
-| 1.0 | 2025-11-15 | Initial CLAUDE.md creation |
-| 1.1 | 2025-11-17 | Added BASIL Integration section, updated workflow documentation |
+| 2.1.1 | 2025-11-18 | Thread cleanup fix for multiple sequential extractions |
+| 2.1.0 | 2025-11-17 | UX enhancements, confidence threshold, BASIL integration |
+| 2.0.0 | 2025-11-15 | Major NLP improvements, confidence scoring |
+| 1.x | Previous | Base functionality |
 
 ---
 
-## Appendix: Useful Code Snippets
+## Quick Reference
 
-### Snippet 1: Creating a New Worker Thread
-
-```python
-from PySide6.QtCore import QObject, QThread, Signal
-
-class CustomWorker(QObject):
-    progress = Signal(int)
-    finished = Signal()
-    error = Signal(str)
-
-    def __init__(self, data):
-        super().__init__()
-        self.data = data
-        self._is_running = True
-
-    def run(self):
-        try:
-            for i in range(100):
-                if not self._is_running:
-                    return
-                # Do work
-                self.progress.emit(i)
-            self.finished.emit()
-        except Exception as e:
-            self.error.emit(str(e))
-
-    def stop(self):
-        self._is_running = False
-
-# In main GUI
-self.worker = CustomWorker(data)
-self.thread = QThread()
-self.worker.moveToThread(self.thread)
-self.thread.started.connect(self.worker.run)
-self.worker.finished.connect(self.thread.quit)
-self.worker.finished.connect(self.worker.deleteLater)
-self.thread.finished.connect(self.thread.deleteLater)
-self.thread.start()
+### Running the App
+```bash
+python main_app.py              # Direct launch
+python run_app.py               # Interactive menu
 ```
 
-### Snippet 2: Reading Configuration
-
-```python
-import configparser
-import os
-
-def load_config(config_file='config.ini', section='DEFAULT'):
-    """Load configuration from INI file"""
-    parser = configparser.ConfigParser()
-
-    if not os.path.exists(config_file):
-        # Create default config
-        parser[section] = {'key': 'default_value'}
-        with open(config_file, 'w') as f:
-            parser.write(f)
-
-    parser.read(config_file)
-    return dict(parser[section])
-
-# Usage
-config = load_config('RBconfig.ini', 'DEFAULT_KEYWORD')
-keywords = config.get('word_set', '').split(',')
+### Running Tests
+```bash
+pytest -v                       # All tests
+pytest test_gui.py -v           # GUI tests only
+pytest --cov=.                  # With coverage
 ```
 
-### Snippet 3: Processing PDFs with PyMuPDF
-
-```python
-import fitz  # PyMuPDF
-
-def extract_text_from_pdf(pdf_path):
-    """Extract all text from PDF"""
-    doc = fitz.open(pdf_path)
-    all_text = []
-
-    for page_num in range(len(doc)):
-        page = doc[page_num]
-        text = page.get_text("text")
-        all_text.append({
-            'page': page_num + 1,
-            'text': text
-        })
-
-    doc.close()
-    return all_text
-
-def add_highlight_to_pdf(input_pdf, output_pdf, page_num, rect):
-    """Add yellow highlight to PDF"""
-    doc = fitz.open(input_pdf)
-    page = doc[page_num]
-
-    # Create highlight annotation
-    highlight = page.add_highlight_annot(rect)
-    highlight.update()
-
-    doc.save(output_pdf)
-    doc.close()
+### Git Workflow
+```bash
+git add <files>
+git commit -m "Type: Description"
+git push origin main
 ```
 
-### Snippet 4: Creating Excel with Formatting
+### Common Commands
+```bash
+# Install dependencies
+pip install -r requirements.txt
+python -m spacy download en_core_web_sm
 
-```python
-from openpyxl import Workbook, load_workbook
-from openpyxl.styles import PatternFill, Font
-from openpyxl.worksheet.datavalidation import DataValidation
+# Clean up
+find . -name "*.pyc" -delete
+find . -name "__pycache__" -type d -delete
 
-def create_formatted_excel(output_path):
-    """Create Excel with formatting and validations"""
-    wb = Workbook()
-    ws = wb.active
-
-    # Write headers
-    ws['A1'] = 'ID'
-    ws['B1'] = 'Description'
-
-    # Apply formatting
-    header_fill = PatternFill(start_color="0000FF", end_color="0000FF", fill_type="solid")
-    header_font = Font(bold=True, color="FFFFFF")
-    ws['A1'].fill = header_fill
-    ws['A1'].font = header_font
-    ws['B1'].fill = header_fill
-    ws['B1'].font = header_font
-
-    # Add data validation
-    dv = DataValidation(type="list", formula1='"Option1,Option2,Option3"')
-    ws.add_data_validation(dv)
-    dv.add(ws['C2'])  # Apply to cell C2
-
-    # Save
-    wb.save(output_path)
-```
-
-### Snippet 5: Using spaCy for NLP
-
-```python
-import spacy
-
-# Load model
-nlp = spacy.load("en_core_web_sm")
-
-def extract_sentences(text):
-    """Extract sentences using spaCy"""
-    doc = nlp(text)
-    sentences = []
-
-    for sent in doc.sents:
-        sentences.append({
-            'text': sent.text,
-            'start': sent.start_char,
-            'end': sent.end_char,
-            'tokens': [token.text for token in sent]
-        })
-
-    return sentences
-
-def filter_by_keywords(text, keywords):
-    """Filter sentences containing keywords"""
-    sentences = extract_sentences(text)
-    matching_sentences = []
-
-    for sent in sentences:
-        sent_lower = sent['text'].lower()
-        for keyword in keywords:
-            if keyword.lower() in sent_lower:
-                matching_sentences.append({
-                    **sent,
-                    'keyword': keyword
-                })
-                break
-
-    return matching_sentences
+# Check code
+pylint *.py
+mypy *.py  # (if type hints added)
 ```
 
 ---
 
-**End of CLAUDE.md**
+## Support
 
-> **Note to AI Assistants**: This document is comprehensive but not exhaustive. When you discover new patterns, conventions, or important information, please update this file to help future AI assistants working on ReqBot.
+- **Issues**: [GitHub Issues](https://github.com/francosax/ReqBot/issues)
+- **Documentation**: See this file (CLAUDE.md) and README.md
+- **TODO/Roadmap**: See TODO.md
 
-**Last Updated**: 2025-11-15 by Claude (Sonnet 4.5)
+---
+
+**Last Updated**: 2025-11-18
+**Maintained By**: Project maintainers
+**AI Assistant Version**: Optimized for Claude Code
+
+---
+
+*This is a living document. Update as the codebase evolves.*
