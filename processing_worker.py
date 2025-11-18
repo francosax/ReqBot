@@ -10,6 +10,10 @@ from config_RB import load_keyword_config
 from get_all_files import get_all
 from report_generator import create_processing_report
 
+# v3.0: Database services
+from database.services.project_service import ProjectService
+from database.services.session_service import ProcessingSessionService
+
 # Set up logging for the worker
 worker_logger = logging.getLogger(__name__)
 
@@ -41,6 +45,31 @@ class ProcessingWorker(QObject):
         report = create_processing_report()
         report.start_processing()
 
+        # v3.0: Create or retrieve project
+        project = None
+        processing_session = None
+        try:
+            # Generate project name from input folder
+            project_name = os.path.basename(self._folder_input.rstrip(os.sep))
+            if not project_name:
+                project_name = "ReqBot Project"
+
+            # Get or create project
+            project = ProjectService.get_or_create_project(
+                name=project_name,
+                input_folder_path=self._folder_input,
+                output_folder_path=self._folder_output,
+                compliance_matrix_template=self._CM_file
+            )
+
+            if project:
+                self.log_message.emit(f"Project initialized: {project.name} (ID: {project.id})", "info")
+            else:
+                self.log_message.emit("Warning: Could not initialize database project", "warning")
+        except Exception as e:
+            worker_logger.error(f"Failed to initialize project: {str(e)}")
+            self.log_message.emit("Warning: Database project creation failed, continuing without persistence", "warning")
+
         try:
             # v2.2: Use provided keywords if available, otherwise load from config
             if self._keywords:
@@ -63,6 +92,20 @@ class ProcessingWorker(QObject):
                 report.add_warning(warning_msg)
                 self.finished.emit("No PDFs found to process.")
                 return
+
+            # v3.0: Create processing session
+            if project:
+                try:
+                    processing_session = ProcessingSessionService.create_session(
+                        project_id=project.id,
+                        keywords_used=', '.join(parole_chiave),
+                        confidence_threshold=self._confidence_threshold
+                    )
+                    if processing_session:
+                        self.log_message.emit(f"Processing session created (ID: {processing_session.id})", "info")
+                except Exception as e:
+                    worker_logger.error(f"Failed to create processing session: {str(e)}")
+                    self.log_message.emit("Warning: Could not create processing session", "warning")
 
             total_requirements = 0
             total_working_time = 0
@@ -98,7 +141,15 @@ class ProcessingWorker(QObject):
 
                         # Step 2: Extracting requirements (main processing in requirement_bot)
                         # This includes PDF analysis, Excel writing, BASIL export, and highlighting
-                        df = requirement_bot(file_path, self._CM_file, parole_chiave, self._folder_output, self._confidence_threshold)
+                        # v3.0: Pass project to requirement_bot for database persistence
+                        df = requirement_bot(
+                            file_path,
+                            self._CM_file,
+                            parole_chiave,
+                            self._folder_output,
+                            self._confidence_threshold,
+                            project=project  # v3.0: Pass project for database persistence
+                        )
 
                         # Step 3: File completed (100% of file progress)
                         self.progress_updated.emit(file_base_progress + file_progress_range)
@@ -152,6 +203,23 @@ class ProcessingWorker(QObject):
             # Mark end of processing
             report.end_processing()
 
+            # v3.0: Complete processing session
+            if processing_session:
+                try:
+                    # Calculate average confidence across all files
+                    overall_avg_confidence = total_requirements / total_files if total_files > 0 else 0.0
+
+                    ProcessingSessionService.complete_session(
+                        session_id=processing_session.id,
+                        documents_processed=total_files,
+                        requirements_extracted=total_requirements,
+                        report_output_path=None  # Will be set after report generation
+                    )
+                    self.log_message.emit(f"Processing session completed (ID: {processing_session.id})", "info")
+                except Exception as e:
+                    worker_logger.error(f"Failed to complete processing session: {str(e)}")
+                    self.log_message.emit("Warning: Could not complete processing session", "warning")
+
             # Generate HTML report
             self.progress_updated.emit(95)
             self.log_message.emit("Generating processing report...", "info")
@@ -160,6 +228,15 @@ class ProcessingWorker(QObject):
 
             if report.generate_html_report(report_path):
                 self.log_message.emit(f"HTML report generated: {report_path}", "info")
+
+                # v3.0: Update session with report path
+                if processing_session:
+                    try:
+                        proc_session = ProcessingSessionService.get_session_by_id(processing_session.id)
+                        if proc_session:
+                            proc_session.report_output_path = report_path
+                    except Exception as e:
+                        worker_logger.error(f"Failed to update session with report path: {str(e)}")
             else:
                 warning_msg = "Failed to generate HTML report"
                 self.log_message.emit(warning_msg, "warning")

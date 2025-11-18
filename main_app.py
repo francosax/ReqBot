@@ -27,6 +27,9 @@ from recent_projects import get_recents_manager
 # Import keyword profiles manager (v2.2)
 from keyword_profiles import get_profiles_manager
 
+# Import database initialization (v3.0)
+from database.database import auto_initialize_database
+
 # --- Constants for paths, messages, etc. ---
 CM_TEMPLATE_NAME = 'Compliance_Matrix_Template_rev001.xlsx'
 
@@ -53,6 +56,7 @@ class RequirementBotApp(QWidget):
         self.recents_manager = get_recents_manager()  # NEW: Initialize recents manager
         self.profiles_manager = get_profiles_manager()  # v2.2: Initialize profiles manager
         self.init_logging() # Setup logging before UI
+        self.init_database()  # v3.0: Initialize database backend
         self.init_ui()
         self._apply_stylesheet() # Apply stylesheet after UI is initialized
         self._load_recent_paths()  # NEW: Load recent paths into dropdowns
@@ -67,6 +71,16 @@ class RequirementBotApp(QWidget):
                             ])
         self.logger = logging.getLogger(__name__)
 
+    def init_database(self):
+        """Initialize the database backend (v3.0)."""
+        try:
+            auto_initialize_database()
+            self.logger.info("Database backend initialized successfully")
+        except Exception as e:
+            self.logger.error(f"Failed to initialize database backend: {str(e)}")
+            self.logger.warning("Application will continue without database persistence")
+            # Don't fail the application - just log the error
+            # The app can still work with Excel/PDF output only
 
     def init_ui(self):
         self.setWindowTitle(f'RequirementBot {GUI_VERSION}')
