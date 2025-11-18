@@ -1,7 +1,7 @@
 # ReqBot TODO List & Future Suggestions
 
 **Last Updated**: 2025-11-18
-**Current Version**: 2.1.0
+**Current Version**: 2.1.1
 **In Development**: v3.0 - Multi-lingual Extraction (claude/multilingual-extraction-v3.0)
 
 This document tracks future enhancements, feature requests, and improvements for ReqBot.
@@ -93,6 +93,18 @@ This document tracks future enhancements, feature requests, and improvements for
   - Location: `processing_worker.py`
   - **Implementation Date**: 2025-11-17
   - **Details**: Progress bar now shows more accurate progress with per-file tracking (0-90% for files, 90-100% for report generation), intermediate updates during file processing, and better handling of edge cases.
+
+- [x] **Thread Cleanup Preventing Multiple Sequential Extractions** ✅ **COMPLETED**
+  - Priority: High
+  - Effort: 2-3 hours
+  - ✅ Fixed thread event loop not terminating after processing
+  - ✅ Added proper quit() and wait() calls in completion handlers
+  - ✅ Added thread cleanup in error and cancel handlers
+  - ✅ Memory leak prevention with proper object cleanup
+  - Location: `main_app.py` (lines 550-580, 514-516)
+  - **Implementation Date**: 2025-11-18
+  - **Details**: Users can now run requirement extraction multiple times without restarting the application. Thread properly terminates with quit() + wait(), references set to None for garbage collection. Automated test confirms fix works correctly.
+  - **Test**: `test_gui.py::test_threading_fix_prevents_double_start` (PASSED)
 
 ---
 
@@ -721,7 +733,7 @@ Based on current state and user needs, recommended order:
 
 ---
 
-**Last Updated**: 2025-11-15
+**Last Updated**: 2025-11-18
 **Maintained By**: Project maintainers
 **Contributions**: Community suggestions welcome!
 

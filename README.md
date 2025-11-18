@@ -1,27 +1,34 @@
-# ReqBot 2.1
+# ReqBot 2.1.1
 
 **Automatic Requirements Extraction Tool for PDF Specifications**
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![Version](https://img.shields.io/badge/version-2.1.0-brightgreen.svg)](RELEASE_NOTES.md)
+[![Version](https://img.shields.io/badge/version-2.1.1-brightgreen.svg)](TODO.md)
 
 ReqBot is a powerful desktop application that automatically extracts requirements from PDF specification documents using advanced NLP techniques. It generates compliance matrices in Excel format, BASIL-compatible SPDX exports, and creates annotated PDFs with highlighted requirements.
 
 ---
 
-## ✨ What's New in Version 2.1
+## ✨ What's New in Version 2.1.1
 
-Version 2.1 introduces **user experience enhancements and quality features**:
+Version 2.1.1 introduces **critical bug fix for threading**:
+
+- 🐛 **Fixed Threading Issue** - Users can now run multiple sequential extractions without restarting (v2.1.1)
+  - Previously, thread cleanup was incomplete causing "Processing In Progress" warning
+  - Proper thread termination with quit() + wait() now implemented
+  - Memory leak prevention with object cleanup
+
+Version 2.1 features:
 
 - 📁 **Recent Files/Projects** - Quick access to last 5 used paths via dropdown menus
 - 🎚️ **Adjustable Confidence Threshold** - Interactive slider control (0.0-1.0) with real-time filtering
 - 📊 **Confidence Display in Excel** - Color-coded confidence scores (Green/Yellow/Red) with auto-filtering
 - 🔧 **Excel Column Corrections** - Fixed Priority column positioning after Confidence addition
 - 🔗 **BASIL SPDX 3.0.1 Integration** - Automatic export of requirements to industry-standard format
-- ✅ **Enhanced Testing** - 63 tests (26 new for recent projects feature)
+- ✅ **Enhanced Testing** - 270+ tests (including threading fix verification)
 
-[📝 See v2.1 Changes](TODO.md) | [📝 v2.0 Release Notes](RELEASE_NOTES_v2.0.md)
+[📝 See v2.1 Changes](TODO.md)
 
 ---
 
@@ -360,6 +367,7 @@ This project is licensed under the GNU General Public License v3.0 - see the [LI
 
 ## 📊 Version History
 
+- **v2.1.1** (2025-11-18) - Bug fix: Thread cleanup for multiple sequential extractions
 - **v2.1.0** (2025-11-17) - UX enhancements: Recent files/projects, adjustable confidence threshold, BASIL integration
 - **v2.0.0** (2025-11-15) - Major NLP improvements: accuracy, performance, quality scoring
 - **v1.2** (Previous) - Base functionality with GUI and Excel generation
