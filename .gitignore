@@ -188,3 +188,16 @@ sampleIO/test_output/
 *_BASIL_Export_*.jsonld
 *_Tagged_*.pdf
 LOG.txt
+
+# Database files (v3.0)
+reqbot.db
+reqbot.db-shm
+reqbot.db-wal
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+
+# Database backups
+backups/
+*.db.backup
