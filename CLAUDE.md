@@ -1,7 +1,7 @@
 # CLAUDE.md - AI Assistant Guide for ReqBot
 
 > **Last Updated**: 2025-11-18
-> **Version**: 2.1.1
+> **Version**: 2.2.0 (In Development)
 > **Purpose**: Concise guide for AI assistants working with the ReqBot codebase
 
 ---
@@ -525,6 +525,7 @@ main_app.py
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 2.2.0 | Q2 2026 | Quality of life improvements, performance optimizations (In Development) |
 | 2.1.1 | 2025-11-18 | Thread cleanup fix for multiple sequential extractions |
 | 2.1.0 | 2025-11-17 | UX enhancements, confidence threshold, BASIL integration |
 | 2.0.0 | 2025-11-15 | Major NLP improvements, confidence scoring |

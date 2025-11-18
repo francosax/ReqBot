@@ -1,25 +1,40 @@
-# ReqBot 2.1.1
+# ReqBot 2.2.0
 
 **Automatic Requirements Extraction Tool for PDF Specifications**
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![Version](https://img.shields.io/badge/version-2.1.1-brightgreen.svg)](TODO.md)
+[![Version](https://img.shields.io/badge/version-2.2.0--dev-orange.svg)](TODO.md)
+[![Development Status](https://img.shields.io/badge/status-in%20development-yellow.svg)](RELEASE_NOTES_v2.2.md)
 
 ReqBot is a powerful desktop application that automatically extracts requirements from PDF specification documents using advanced NLP techniques. It generates compliance matrices in Excel format, BASIL-compatible SPDX exports, and creates annotated PDFs with highlighted requirements.
 
 ---
 
-## ✨ What's New in Version 2.1.1
+## ✨ What's New
 
-Version 2.1.1 introduces **critical bug fix for threading**:
+### 🚧 Version 2.2.0 (In Development - Q2 2026)
 
-- 🐛 **Fixed Threading Issue** - Users can now run multiple sequential extractions without restarting (v2.1.1)
-  - Previously, thread cleanup was incomplete causing "Processing In Progress" warning
-  - Proper thread termination with quit() + wait() now implemented
-  - Memory leak prevention with object cleanup
+Version 2.2.0 focuses on **quality of life improvements and performance**:
 
-Version 2.1 features:
+- 🔍 **Search & Filter in Results** (Planned) - Find and filter extracted requirements in GUI
+- 🚀 **Parallel PDF Processing** (Planned) - 2-3x faster batch operations
+- 🎯 **Drag & Drop Support** (Planned) - Drag PDFs directly into application
+- 📺 **Real-Time Preview** (Planned) - Preview requirements during processing
+- 🧪 **Enhanced Testing** (Planned) - 80%+ test coverage, CI/CD pipeline
+- 📚 **Comprehensive Documentation** (Planned) - Video tutorials, user manual, FAQ
+
+[📝 See Full v2.2 Release Notes](RELEASE_NOTES_v2.2.md)
+
+### Version 2.1.1 (Released)
+
+Critical bug fix for threading and UX enhancements:
+
+- 🐛 **Fixed Threading Issue** - Users can now run multiple sequential extractions without restarting
+- 📁 **Recent Files/Projects** - Quick access to last 5 used paths via dropdown menus
+- 🎚️ **Adjustable Confidence Threshold** - Interactive slider control (0.0-1.0)
+
+### Version 2.1.0 Features:
 
 - 📁 **Recent Files/Projects** - Quick access to last 5 used paths via dropdown menus
 - 🎚️ **Adjustable Confidence Threshold** - Interactive slider control (0.0-1.0) with real-time filtering
@@ -480,6 +495,7 @@ This project is licensed under the GNU General Public License v3.0 - see the [LI
 
 ## 📊 Version History
 
+- **v2.2.0** (Q2 2026 - In Development) - Quality of life improvements, performance optimizations, enhanced testing
 - **v2.1.1** (2025-11-18) - Bug fix: Thread cleanup for multiple sequential extractions
 - **v2.1.0** (2025-11-17) - UX enhancements: Recent files/projects, adjustable confidence threshold, BASIL integration
 - **v2.0.0** (2025-11-15) - Major NLP improvements: accuracy, performance, quality scoring
