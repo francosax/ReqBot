@@ -1,0 +1,542 @@
+{
+  "english": {
+    "code": "en",
+    "model": "en_core_web_sm",
+    "keywords": [
+      "shall",
+      "must",
+      "should",
+      "may",
+      "will",
+      "can",
+      "has to",
+      "have to",
+      "need to",
+      "ensure",
+      "ensures",
+      "ensuring",
+      "scope",
+      "recommended",
+      "required"
+    ],
+    "modal_verbs": {
+      "obligation": [
+        "shall",
+        "must",
+        "has to",
+        "have to",
+        "need to",
+        "required"
+      ],
+      "recommendation": [
+        "should",
+        "ought to",
+        "recommended"
+      ],
+      "permission": [
+        "may",
+        "can",
+        "could",
+        "might"
+      ],
+      "future": [
+        "will",
+        "shall"
+      ]
+    },
+    "priority_high": [
+      "shall",
+      "must",
+      "has to",
+      "have to",
+      "required"
+    ],
+    "priority_medium": [
+      "should",
+      "ought to",
+      "need to",
+      "recommended"
+    ],
+    "priority_low": [
+      "may",
+      "can",
+      "could",
+      "might"
+    ],
+    "security_keywords": [
+      "security",
+      "secure",
+      "protection",
+      "authentication",
+      "authorization",
+      "encryption",
+      "confidentiality"
+    ],
+    "categories": {
+      "functional": [
+        "function",
+        "capability",
+        "feature",
+        "operation"
+      ],
+      "performance": [
+        "performance",
+        "speed",
+        "throughput",
+        "latency",
+        "response"
+      ],
+      "safety": [
+        "safety",
+        "hazard",
+        "risk",
+        "fail-safe",
+        "failure"
+      ],
+      "security": [
+        "security",
+        "secure",
+        "authentication",
+        "authorization"
+      ],
+      "interface": [
+        "interface",
+        "API",
+        "connection",
+        "integration"
+      ],
+      "data": [
+        "data",
+        "database",
+        "storage",
+        "persistence"
+      ],
+      "compliance": [
+        "compliance",
+        "standard",
+        "regulation",
+        "conform"
+      ]
+    }
+  },
+  "french": {
+    "code": "fr",
+    "model": "fr_core_news_sm",
+    "keywords": [
+      "doit",
+      "devra",
+      "devrait",
+      "peut",
+      "pourra",
+      "pourrait",
+      "faut",
+      "exigence",
+      "exiger",
+      "garantir",
+      "assurer",
+      "recommandé",
+      "requis",
+      "nécessaire"
+    ],
+    "modal_verbs": {
+      "obligation": [
+        "doit",
+        "devra",
+        "faut",
+        "requis",
+        "nécessaire"
+      ],
+      "recommendation": [
+        "devrait",
+        "recommandé"
+      ],
+      "permission": [
+        "peut",
+        "pourra",
+        "pourrait"
+      ],
+      "future": [
+        "devra",
+        "pourra"
+      ]
+    },
+    "priority_high": [
+      "doit",
+      "devra",
+      "faut",
+      "requis",
+      "nécessaire"
+    ],
+    "priority_medium": [
+      "devrait",
+      "recommandé"
+    ],
+    "priority_low": [
+      "peut",
+      "pourra",
+      "pourrait"
+    ],
+    "security_keywords": [
+      "sécurité",
+      "sûreté",
+      "protection",
+      "authentification",
+      "autorisation",
+      "chiffrement",
+      "confidentialité"
+    ],
+    "categories": {
+      "functional": [
+        "fonction",
+        "fonctionnalité",
+        "caractéristique",
+        "opération"
+      ],
+      "performance": [
+        "performance",
+        "vitesse",
+        "débit",
+        "latence",
+        "réponse"
+      ],
+      "safety": [
+        "sécurité",
+        "sûreté",
+        "risque",
+        "défaillance"
+      ],
+      "security": [
+        "sécurité",
+        "authentification",
+        "autorisation"
+      ],
+      "interface": [
+        "interface",
+        "API",
+        "connexion",
+        "intégration"
+      ],
+      "data": [
+        "données",
+        "base de données",
+        "stockage"
+      ],
+      "compliance": [
+        "conformité",
+        "norme",
+        "réglementation"
+      ]
+    }
+  },
+  "german": {
+    "code": "de",
+    "model": "de_core_news_sm",
+    "keywords": [
+      "muss",
+      "soll",
+      "sollte",
+      "kann",
+      "könnte",
+      "darf",
+      "wird",
+      "anforderung",
+      "sicherstellen",
+      "gewährleisten",
+      "empfohlen",
+      "erforderlich",
+      "notwendig"
+    ],
+    "modal_verbs": {
+      "obligation": [
+        "muss",
+        "muss...sein",
+        "erforderlich",
+        "notwendig"
+      ],
+      "recommendation": [
+        "soll",
+        "sollte",
+        "empfohlen"
+      ],
+      "permission": [
+        "kann",
+        "könnte",
+        "darf",
+        "dürfte"
+      ],
+      "future": [
+        "wird"
+      ]
+    },
+    "priority_high": [
+      "muss",
+      "erforderlich",
+      "notwendig"
+    ],
+    "priority_medium": [
+      "soll",
+      "sollte",
+      "empfohlen"
+    ],
+    "priority_low": [
+      "kann",
+      "könnte",
+      "darf"
+    ],
+    "security_keywords": [
+      "sicherheit",
+      "schutz",
+      "authentifizierung",
+      "autorisierung",
+      "verschlüsselung",
+      "vertraulichkeit"
+    ],
+    "categories": {
+      "functional": [
+        "funktion",
+        "funktionalität",
+        "merkmal",
+        "betrieb"
+      ],
+      "performance": [
+        "leistung",
+        "geschwindigkeit",
+        "durchsatz",
+        "latenz"
+      ],
+      "safety": [
+        "sicherheit",
+        "gefahr",
+        "risiko",
+        "ausfallsicherheit"
+      ],
+      "security": [
+        "sicherheit",
+        "authentifizierung",
+        "autorisierung"
+      ],
+      "interface": [
+        "schnittstelle",
+        "API",
+        "verbindung",
+        "integration"
+      ],
+      "data": [
+        "daten",
+        "datenbank",
+        "speicherung"
+      ],
+      "compliance": [
+        "konformität",
+        "standard",
+        "vorschrift"
+      ]
+    }
+  },
+  "italian": {
+    "code": "it",
+    "model": "it_core_news_sm",
+    "keywords": [
+      "deve",
+      "dovrà",
+      "dovrebbe",
+      "può",
+      "potrebbe",
+      "potrà",
+      "requisito",
+      "garantire",
+      "assicurare",
+      "raccomandato",
+      "richiesto",
+      "necessario"
+    ],
+    "modal_verbs": {
+      "obligation": [
+        "deve",
+        "dovrà",
+        "richiesto",
+        "necessario"
+      ],
+      "recommendation": [
+        "dovrebbe",
+        "raccomandato"
+      ],
+      "permission": [
+        "può",
+        "potrebbe",
+        "potrà"
+      ],
+      "future": [
+        "dovrà",
+        "potrà"
+      ]
+    },
+    "priority_high": [
+      "deve",
+      "dovrà",
+      "richiesto",
+      "necessario"
+    ],
+    "priority_medium": [
+      "dovrebbe",
+      "raccomandato"
+    ],
+    "priority_low": [
+      "può",
+      "potrebbe",
+      "potrà"
+    ],
+    "security_keywords": [
+      "sicurezza",
+      "protezione",
+      "autenticazione",
+      "autorizzazione",
+      "crittografia",
+      "riservatezza"
+    ],
+    "categories": {
+      "functional": [
+        "funzione",
+        "funzionalità",
+        "caratteristica",
+        "operazione"
+      ],
+      "performance": [
+        "prestazione",
+        "velocità",
+        "throughput",
+        "latenza"
+      ],
+      "safety": [
+        "sicurezza",
+        "pericolo",
+        "rischio",
+        "fail-safe"
+      ],
+      "security": [
+        "sicurezza",
+        "autenticazione",
+        "autorizzazione"
+      ],
+      "interface": [
+        "interfaccia",
+        "API",
+        "connessione",
+        "integrazione"
+      ],
+      "data": [
+        "dati",
+        "database",
+        "archiviazione"
+      ],
+      "compliance": [
+        "conformità",
+        "standard",
+        "regolamento"
+      ]
+    }
+  },
+  "spanish": {
+    "code": "es",
+    "model": "es_core_news_sm",
+    "keywords": [
+      "debe",
+      "deberá",
+      "debería",
+      "puede",
+      "podría",
+      "podrá",
+      "requisito",
+      "garantizar",
+      "asegurar",
+      "recomendado",
+      "requerido",
+      "necesario"
+    ],
+    "modal_verbs": {
+      "obligation": [
+        "debe",
+        "deberá",
+        "requerido",
+        "necesario"
+      ],
+      "recommendation": [
+        "debería",
+        "recomendado"
+      ],
+      "permission": [
+        "puede",
+        "podría",
+        "podrá"
+      ],
+      "future": [
+        "deberá",
+        "podrá"
+      ]
+    },
+    "priority_high": [
+      "debe",
+      "deberá",
+      "requerido",
+      "necesario"
+    ],
+    "priority_medium": [
+      "debería",
+      "recomendado"
+    ],
+    "priority_low": [
+      "puede",
+      "podría",
+      "podrá"
+    ],
+    "security_keywords": [
+      "seguridad",
+      "protección",
+      "autenticación",
+      "autorización",
+      "cifrado",
+      "confidencialidad"
+    ],
+    "categories": {
+      "functional": [
+        "función",
+        "funcionalidad",
+        "característica",
+        "operación"
+      ],
+      "performance": [
+        "rendimiento",
+        "velocidad",
+        "throughput",
+        "latencia"
+      ],
+      "safety": [
+        "seguridad",
+        "peligro",
+        "riesgo",
+        "fail-safe"
+      ],
+      "security": [
+        "seguridad",
+        "autenticación",
+        "autorización"
+      ],
+      "interface": [
+        "interfaz",
+        "API",
+        "conexión",
+        "integración"
+      ],
+      "data": [
+        "datos",
+        "base de datos",
+        "almacenamiento"
+      ],
+      "compliance": [
+        "cumplimiento",
+        "estándar",
+        "regulación"
+      ]
+    }
+  }
+}
