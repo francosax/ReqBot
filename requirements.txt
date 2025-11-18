@@ -1,7 +1,30 @@
-pytest~=8.3.5
-PyQt5~=5.15.9
-python-qt5~=0.1.10
-openpyxl~=3.1.5
-PySide6~=6.6.3.1
-configparser~=7.1.0
-pandas~=2.0.3
+# ReqBot v3.0 Dependencies
+
+# Core GUI Framework
+PySide6>=6.5.0
+
+# PDF Processing
+PyMuPDF>=1.23.0
+
+# NLP Processing
+spacy>=3.6.0
+
+# Data Processing
+pandas>=2.0.0
+
+# Excel File Handling
+openpyxl>=3.1.0
+
+# Database ORM and Migrations (v3.0)
+SQLAlchemy>=2.0.0
+alembic>=1.12.0
+
+# PostgreSQL driver (optional, for enterprise deployments)
+psycopg2-binary>=2.9.0
+
+# Development and Testing
+pytest>=7.4.0
+pytest-qt>=4.2.0
+
+# Note: Remember to download spaCy English model after installation:
+# python -m spacy download en_core_web_sm
