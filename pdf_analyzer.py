@@ -348,6 +348,14 @@ def requirement_finder(path, keywords_set, filename, confidence_threshold=0.5):
     else 'security' if 'security' in x.lower()
     else 'low')
 
+    # v2.2: Add automatic categorization
+    from requirement_categorizer import get_categorizer
+    categorizer = get_categorizer()
+    df['Category'] = df.apply(
+        lambda row: categorizer.categorize(row['Description'], row['Priority']),
+        axis=1
+    )
+
     lista_note = []
     for j in range(len(df['Label Number'])):
         lista_note.append(df['Label Number'][j] + ":" + df['Description'][j])

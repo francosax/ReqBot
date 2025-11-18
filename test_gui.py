@@ -14,15 +14,45 @@ from version import GUI_VERSION
 
 @pytest.fixture(scope="module")
 def app():
+    """Create QApplication instance for tests."""
     app = QApplication.instance() or QApplication([])
     yield app
+    # Cleanup: Process remaining events and deleteLater objects
+    app.processEvents()
 
 @pytest.fixture
-def gui(app):
+def gui(app, qtbot):
+    """Create RequirementBotApp instance for tests with proper cleanup."""
     gui = RequirementBotApp()
     gui.show()
     yield gui
-    gui.close()
+
+    # Proper cleanup to avoid Windows fatal exception
+    try:
+        # Close the window if it's still visible
+        if gui.isVisible():
+            gui.close()
+
+        # Stop any running worker threads
+        if hasattr(gui, '_worker_thread') and gui._worker_thread is not None:
+            if gui._worker_thread.isRunning():
+                if hasattr(gui, '_worker') and gui._worker is not None:
+                    gui._worker.stop()
+                gui._worker_thread.quit()
+                gui._worker_thread.wait(1000)  # Wait up to 1 second
+
+        # Process pending events
+        app.processEvents()
+
+        # Schedule for deletion
+        gui.deleteLater()
+
+        # Process deleteLater events
+        app.processEvents()
+
+    except Exception as e:
+        # Log but don't fail test on cleanup errors
+        print(f"Warning: Cleanup error in test fixture: {e}")
 
 def test_initial_state(gui):
     # NEW: Use currentText() for QComboBox widgets

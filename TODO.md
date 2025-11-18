@@ -47,12 +47,16 @@ This document tracks future enhancements, feature requests, and improvements for
   - **Implementation Date**: 2025-11-17
   - **Details**: Added interactive slider and spinbox controls in GUI for real-time confidence threshold adjustment. Default value: 0.5 (50%). Range: 0.0-1.0. Requirements below threshold are filtered during extraction.
 
-- [ ] **Export Processing Report**
+- [x] **Export Processing Report** ✅ **COMPLETED**
   - Priority: Medium
   - Effort: 4-5 hours
-  - Generate summary PDF/HTML report after processing
-  - Include: total requirements, avg confidence, warnings, errors
-  - Location: New file `report_generator.py`
+  - ✅ Generate summary HTML report after processing
+  - ✅ Include: total requirements, avg confidence, warnings, errors
+  - ✅ Color-coded confidence scores with visual styling
+  - ✅ Per-file breakdown with warnings tracking
+  - Location: `report_generator.py`, integrated in `processing_worker.py`
+  - **Implementation Date**: 2025-11-17
+  - **Details**: HTML reports auto-generated after each processing run with comprehensive statistics, quality metrics, file details, warnings, and errors. Reports saved as YYYY.MM.DD_HHMMSS_Processing_Report.html
 
 - [x] **Recent Files/Projects** ✅ **COMPLETED**
   - Priority: Medium
@@ -66,17 +70,28 @@ This document tracks future enhancements, feature requests, and improvements for
 
 ### Bug Fixes
 
-- [ ] **Windows Fatal Exception on Test Cleanup**
+- [x] **Windows Fatal Exception on Test Cleanup** ✅ **ADDRESSED**
   - Priority: Low (doesn't affect functionality)
   - Effort: 2-4 hours
-  - Investigate Qt cleanup issue on Windows
-  - Location: Test suite
+  - ✅ Investigated Qt cleanup issue on Windows
+  - ✅ Added comprehensive cleanup code in test fixtures
+  - ✅ Created conftest.py with session-wide Qt cleanup
+  - ✅ Added proper thread cleanup and deleteLater() handling
+  - Location: `test_gui.py`, `conftest.py`
+  - **Implementation Date**: 2025-11-17
+  - **Details**: Enhanced Qt test cleanup with proper thread termination, event processing, and garbage collection. Should significantly reduce or eliminate Windows fatal exceptions during test cleanup.
 
-- [ ] **Progress Bar Not Always Accurate**
+- [x] **Progress Bar Not Always Accurate** ✅ **COMPLETED**
   - Priority: Medium
   - Effort: 1-2 hours
-  - Improve progress tracking granularity
-  - Location: `processing_worker.py`, `RB_coordinator.py`
+  - ✅ Improved progress tracking granularity
+  - ✅ Added per-file progress breakdown with sub-steps
+  - ✅ Reserved last 10% for report generation
+  - ✅ Progress updates even on errors
+  - ✅ File counter in log messages [1/5]
+  - Location: `processing_worker.py`
+  - **Implementation Date**: 2025-11-17
+  - **Details**: Progress bar now shows more accurate progress with per-file tracking (0-90% for files, 90-100% for report generation), intermediate updates during file processing, and better handling of edge cases.
 
 ---
 
@@ -87,19 +102,23 @@ This document tracks future enhancements, feature requests, and improvements for
 
 ### Features
 
-- [ ] **Batch Processing Mode**
+- [ ] **Batch Processing Mode** ⏸️ **DEFERRED TO v3.0**
   - Priority: High
   - Effort: 1 week
   - Process multiple folders in one run
   - Generate combined compliance matrix
   - Progress tracking for batch operations
+  - **Status**: Deferred to v3.0 - Focus shifted to enterprise features
 
-- [ ] **Requirement Categories/Tags**
+- [x] **Requirement Categories/Tags** ✅ **COMPLETED**
   - Priority: Medium
   - Effort: 4-5 days
-  - Auto-categorize requirements (functional, safety, performance, etc.)
-  - Add category column to Excel output
-  - Use NLP patterns for categorization
+  - ✅ Auto-categorize requirements (functional, safety, performance, etc.)
+  - ✅ Add category column to Excel output (Column J)
+  - ✅ Use NLP patterns for categorization
+  - Location: `requirement_categorizer.py`, integrated in `pdf_analyzer.py`, `excel_writer.py`
+  - **Implementation Date**: 2025-11-18
+  - **Details**: Automatic categorization into 9 categories (Functional, Safety, Performance, Security, Interface, Data, Compliance, Documentation, Testing) using keyword matching and regex patterns. Categories automatically added to Excel output in column J.
 
 - [ ] **Search/Filter in Results**
   - Priority: Medium
@@ -107,36 +126,43 @@ This document tracks future enhancements, feature requests, and improvements for
   - Add search functionality in GUI for extracted requirements
   - Filter by page, keyword, priority, confidence
   - Preview before exporting
+  - **Status**: Deferred to future release (complex GUI work)
 
-- [ ] **Custom Keyword Sets**
+- [x] **Custom Keyword Sets** ✅ **COMPLETED**
   - Priority: Medium
   - Effort: 2-3 days
-  - Allow multiple keyword profiles (aerospace, medical, automotive)
-  - Save/load keyword sets from GUI
-  - Predefined templates for common domains
+  - ✅ Allow multiple keyword profiles (aerospace, medical, automotive)
+  - ✅ Save/load keyword sets from GUI
+  - ✅ Predefined templates for common domains
+  - Location: `keyword_profiles.py`, integrated in `main_app.py`, `processing_worker.py`
+  - **Implementation Date**: 2025-11-18
+  - **Details**: Full keyword profile management system with 6 predefined profiles (Generic, Aerospace, Medical, Automotive, Software, Safety). GUI includes profile selector dropdown and "Manage Profiles" dialog for creating, editing, and deleting custom profiles. Profiles saved to keyword_profiles.json.
 
-- [ ] **Undo/Redo for Manual Edits**
+- [ ] **Undo/Redo for Manual Edits** ⏸️ **DEFERRED TO v3.0**
   - Priority: Low
   - Effort: 1 week
   - Allow editing requirements before export
   - Undo/redo functionality
   - Mark manual edits differently
+  - **Status**: Deferred to v3.0 - Will be part of web-based version
 
 ### Improvements
 
-- [ ] **Dark Mode Theme**
+- [ ] **Dark Mode Theme** ⏸️ **DEFERRED TO v3.0**
   - Priority: Low
   - Effort: 2-3 days
   - Add dark theme option
   - System theme detection
   - User preference storage
+  - **Status**: Deferred to v3.0 - Will be part of web UI redesign
 
-- [ ] **Internationalization (i18n)**
+- [ ] **Internationalization (i18n)** ⏸️ **DEFERRED TO v3.0**
   - Priority: Low
   - Effort: 1-2 weeks
   - Support for multiple languages
   - Start with Italian, German, French
   - Translation files structure
+  - **Status**: Deferred to v3.0 - Will be implemented with web-based version
 
 ---
 

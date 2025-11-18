@@ -8,10 +8,15 @@ from highlight_requirements import highlight_requirements
 from pdf_analyzer import requirement_finder
 from basil_integration import export_to_basil
 
+# v3.0: Database services
+from database.services.document_service import DocumentService
+from database.services.requirement_service import RequirementService
+from database.models import Priority, ProcessingStatus
+
 logger = logging.getLogger(__name__)
 
 
-def requirement_bot(path_in, cm_path, words_to_find, path_out, confidence_threshold=0.5):
+def requirement_bot(path_in, cm_path, words_to_find, path_out, confidence_threshold=0.5, project=None):
     """
     Main orchestration function for requirement extraction and processing.
 
@@ -21,6 +26,7 @@ def requirement_bot(path_in, cm_path, words_to_find, path_out, confidence_thresh
         words_to_find: Set of keywords to find
         path_out: Output directory path
         confidence_threshold: Minimum confidence threshold for requirements (default: 0.5)
+        project: Optional Project object for database persistence (v3.0)
 
     Returns:
         DataFrame with extracted requirements
@@ -34,8 +40,68 @@ def requirement_bot(path_in, cm_path, words_to_find, path_out, confidence_thresh
     # print(filename)
     #folder_path = os.path.dirname(filename_path)
 
+    # v3.0: Create or get document in database
+    document = None
+    if project:
+        try:
+            document, is_new = DocumentService.get_or_create_document(
+                project_id=project.id,
+                filename=os.path.basename(path_in),
+                file_path=path_in
+            )
+            if document:
+                if is_new:
+                    logger.info(f"Created new document in database: {document.filename} (ID: {document.id})")
+                else:
+                    logger.info(f"Retrieved existing document from database: {document.filename} (ID: {document.id})")
+        except Exception as e:
+            logger.error(f"Failed to create/retrieve document in database: {str(e)}")
+            # Continue processing even if database save fails
+
     # ========================= ALGORITMO PER TROVARE I REQUISITI =====================================================
     df = requirement_finder(path_in, words_to_find, filename, confidence_threshold)
+
+    # v3.0: Save requirements to database
+    if project and document and len(df) > 0:
+        try:
+            logger.info(f"Saving {len(df)} requirements to database...")
+            saved_count = 0
+            for _, row in df.iterrows():
+                # Map priority text to enum
+                priority_map = {
+                    'high': Priority.HIGH,
+                    'medium': Priority.MEDIUM,
+                    'low': Priority.LOW,
+                    'security': Priority.SECURITY
+                }
+                priority_enum = priority_map.get(row.get('Priority', '').lower(), Priority.MEDIUM)
+
+                # Create requirement
+                req = RequirementService.create_requirement(
+                    document_id=document.id,
+                    project_id=project.id,
+                    label_number=row['Label Number'],
+                    description=row['Description'],
+                    page_number=int(row['Page']),
+                    keyword=row.get('Keyword'),
+                    priority=priority_enum,
+                    confidence_score=float(row.get('Confidence', 0.0)),
+                    raw_text=str(row.get('Raw', ''))
+                )
+                if req:
+                    saved_count += 1
+
+            logger.info(f"Successfully saved {saved_count}/{len(df)} requirements to database")
+
+            # Update document status to completed
+            DocumentService.update_processing_status(
+                document_id=document.id,
+                status=ProcessingStatus.COMPLETED,
+                page_count=int(df['Page'].max()) if 'Page' in df.columns else None
+            )
+        except Exception as e:
+            logger.error(f"Failed to save requirements to database: {str(e)}")
+            # Continue processing even if database save fails
 
     # ==================================================================================================================
     # ========================= GESTIONE DELLA COMPLIANCE MATRIX ======================================================

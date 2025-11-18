@@ -175,8 +175,29 @@ cython_debug/
 
 # ReqBot specific
 recents_config.json
+keyword_profiles.json
 debug.txt
 application_gui.log
 template_compliance_matrix.xlsx
 sampleIO/test_output/
 .claude/
+
+# Generated reports and outputs
+*_Processing_Report.html
+*_Compliance Matrix_*.xlsx
+*_BASIL_Export_*.jsonld
+*_Tagged_*.pdf
+LOG.txt
+
+# Database files (v3.0)
+reqbot.db
+reqbot.db-shm
+reqbot.db-wal
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+
+# Database backups
+backups/
+*.db.backup
