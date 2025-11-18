@@ -10,6 +10,7 @@ This module handles:
 """
 
 import logging
+import threading
 from contextlib import contextmanager
 from typing import Generator, Optional
 import os
@@ -49,6 +50,11 @@ _engine: Optional[Engine] = None
 _session_factory: Optional[sessionmaker] = None
 _scoped_session_factory: Optional[scoped_session] = None
 
+# Thread locks for singleton initialization
+_engine_lock = threading.Lock()
+_session_factory_lock = threading.Lock()
+_scoped_session_lock = threading.Lock()
+
 # ============================================================================
 # SQLite Optimization
 # ============================================================================
@@ -81,7 +87,7 @@ def set_sqlite_pragma(dbapi_conn, connection_record):
 
 def create_db_engine() -> Engine:
     """
-    Create and configure the SQLAlchemy engine.
+    Create and configure the SQLAlchemy engine with thread-safe singleton pattern.
 
     Returns:
         Engine: Configured SQLAlchemy engine
@@ -91,37 +97,43 @@ def create_db_engine() -> Engine:
     """
     global _engine
 
+    # Double-checked locking pattern for thread safety
     if _engine is not None:
         return _engine
 
-    try:
-        engine_options = get_engine_options()
+    with _engine_lock:
+        # Check again inside lock
+        if _engine is not None:
+            return _engine
 
-        # For SQLite, use StaticPool for better multi-threading
-        if is_sqlite():
-            engine_options['poolclass'] = StaticPool
+        try:
+            engine_options = get_engine_options()
 
-        _engine = create_engine(DATABASE_URL, **engine_options)
+            # For SQLite, use StaticPool for better multi-threading
+            if is_sqlite():
+                engine_options['poolclass'] = StaticPool
 
-        # Sanitize URL for logging (hide passwords)
-        safe_url = DATABASE_URL
-        if '@' in DATABASE_URL:
-            # PostgreSQL: hide password
-            parts = DATABASE_URL.split('@')
-            if ':' in parts[0]:
-                # Format: postgresql://user:password@host
-                user_parts = parts[0].split(':')
-                safe_url = f"{':'.join(user_parts[:-1])}:***@{parts[1]}"
-        else:
-            # SQLite: just show it's sqlite
-            safe_url = "sqlite:///<local_db>"
+            _engine = create_engine(DATABASE_URL, **engine_options)
 
-        logger.info(f"Database engine created successfully: {safe_url}")
-        return _engine
+            # Sanitize URL for logging (hide passwords)
+            safe_url = DATABASE_URL
+            if '@' in DATABASE_URL:
+                # PostgreSQL: hide password
+                parts = DATABASE_URL.split('@')
+                if ':' in parts[0]:
+                    # Format: postgresql://user:password@host
+                    user_parts = parts[0].split(':')
+                    safe_url = f"{':'.join(user_parts[:-1])}:***@{parts[1]}"
+            else:
+                # SQLite: just show it's sqlite
+                safe_url = "sqlite:///<local_db>"
 
-    except Exception as e:
-        logger.error(f"Failed to create database engine: {e}")
-        raise
+            logger.info(f"Database engine created successfully: {safe_url}")
+            return _engine
+
+        except Exception as e:
+            logger.error(f"Failed to create database engine: {e}")
+            raise
 
 
 def get_engine() -> Engine:
@@ -142,26 +154,32 @@ def get_engine() -> Engine:
 
 def create_session_factory() -> sessionmaker:
     """
-    Create the session factory for database sessions.
+    Create the session factory for database sessions with thread-safe singleton pattern.
 
     Returns:
         sessionmaker: Session factory
     """
     global _session_factory
 
+    # Double-checked locking pattern for thread safety
     if _session_factory is not None:
         return _session_factory
 
-    engine = get_engine()
-    _session_factory = sessionmaker(
-        bind=engine,
-        autocommit=False,
-        autoflush=False,
-        expire_on_commit=False
-    )
+    with _session_factory_lock:
+        # Check again inside lock
+        if _session_factory is not None:
+            return _session_factory
 
-    logger.info("Session factory created successfully")
-    return _session_factory
+        engine = get_engine()
+        _session_factory = sessionmaker(
+            bind=engine,
+            autocommit=False,
+            autoflush=False,
+            expire_on_commit=False
+        )
+
+        logger.info("Session factory created successfully")
+        return _session_factory
 
 
 def get_session_factory() -> sessionmaker:
@@ -182,21 +200,27 @@ def get_session_factory() -> sessionmaker:
 
 def create_scoped_session() -> scoped_session:
     """
-    Create a thread-safe scoped session.
+    Create a thread-safe scoped session with thread-safe singleton pattern.
 
     Returns:
         scoped_session: Thread-safe session
     """
     global _scoped_session_factory
 
+    # Double-checked locking pattern for thread safety
     if _scoped_session_factory is not None:
         return _scoped_session_factory
 
-    session_factory = get_session_factory()
-    _scoped_session_factory = scoped_session(session_factory)
+    with _scoped_session_lock:
+        # Check again inside lock
+        if _scoped_session_factory is not None:
+            return _scoped_session_factory
 
-    logger.info("Scoped session factory created successfully")
-    return _scoped_session_factory
+        session_factory = get_session_factory()
+        _scoped_session_factory = scoped_session(session_factory)
+
+        logger.info("Scoped session factory created successfully")
+        return _scoped_session_factory
 
 
 def get_scoped_session() -> scoped_session:

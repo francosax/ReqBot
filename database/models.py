@@ -8,7 +8,6 @@ Supports both SQLite and PostgreSQL databases.
 from datetime import datetime
 from typing import Optional, List
 from enum import Enum as PyEnum
-import json
 import logging
 
 from sqlalchemy import (
@@ -94,13 +93,13 @@ class Project(Base):
 
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now(), nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=func.now(), onupdate=func.now(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=func.now(), nullable=False)
 
     # Status
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
     # Metadata (flexible JSON field for additional settings)
-    metadata_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    metadata: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
 
     # Relationships
     documents: Mapped[List["Document"]] = relationship("Document", back_populates="project", cascade="all, delete-orphan")
@@ -116,22 +115,6 @@ class Project(Base):
 
     def __repr__(self):
         return f"<Project(id={self.id}, name='{self.name}')>"
-
-    @property
-    def metadata(self):
-        """Parse metadata JSON to dict."""
-        if self.metadata_json:
-            try:
-                return json.loads(self.metadata_json)
-            except (json.JSONDecodeError, TypeError) as e:
-                logger.error(f"Failed to parse metadata JSON: {e}")
-                return {}
-        return {}
-
-    @metadata.setter
-    def metadata(self, value: dict):
-        """Store metadata dict as JSON."""
-        self.metadata_json = json.dumps(value) if value else None
 
 
 # ============================================================================
@@ -169,10 +152,10 @@ class Document(Base):
 
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now(), nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=func.now(), onupdate=func.now(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=func.now(), nullable=False)
 
     # Metadata
-    metadata_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    metadata: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
 
     # Relationships
     project: Mapped["Project"] = relationship("Project", back_populates="documents")
@@ -189,22 +172,6 @@ class Document(Base):
 
     def __repr__(self):
         return f"<Document(id={self.id}, filename='{self.filename}', status='{self.processing_status}')>"
-
-    @property
-    def metadata(self):
-        """Parse metadata JSON to dict."""
-        if self.metadata_json:
-            try:
-                return json.loads(self.metadata_json)
-            except (json.JSONDecodeError, TypeError) as e:
-                logger.error(f"Failed to parse metadata JSON: {e}")
-                return {}
-        return {}
-
-    @metadata.setter
-    def metadata(self, value: dict):
-        """Store metadata dict as JSON."""
-        self.metadata_json = json.dumps(value) if value else None
 
 
 # ============================================================================
@@ -262,7 +229,7 @@ class Requirement(Base):
     edited_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
     # Metadata
-    metadata_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    metadata: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
 
     # Relationships
     document: Mapped["Document"] = relationship("Document", back_populates="requirements")
@@ -284,22 +251,6 @@ class Requirement(Base):
 
     def __repr__(self):
         return f"<Requirement(id={self.id}, label='{self.label_number}', priority='{self.priority}')>"
-
-    @property
-    def metadata(self):
-        """Parse metadata JSON to dict."""
-        if self.metadata_json:
-            try:
-                return json.loads(self.metadata_json)
-            except (json.JSONDecodeError, TypeError) as e:
-                logger.error(f"Failed to parse metadata JSON: {e}")
-                return {}
-        return {}
-
-    @metadata.setter
-    def metadata(self, value: dict):
-        """Store metadata dict as JSON."""
-        self.metadata_json = json.dumps(value) if value else None
 
 
 # ============================================================================
@@ -342,7 +293,7 @@ class RequirementHistory(Base):
     changed_at: Mapped[datetime] = mapped_column(DateTime, default=func.now(), nullable=False)
 
     # Full Snapshot (stores complete requirement state)
-    snapshot_data_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    snapshot_data: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
 
     # Relationships
     requirement: Mapped["Requirement"] = relationship("Requirement", back_populates="history")
@@ -356,22 +307,6 @@ class RequirementHistory(Base):
 
     def __repr__(self):
         return f"<RequirementHistory(id={self.id}, req_id={self.requirement_id}, v{self.version}, type='{self.change_type}')>"
-
-    @property
-    def snapshot_data(self):
-        """Parse snapshot JSON to dict."""
-        if self.snapshot_data_json:
-            try:
-                return json.loads(self.snapshot_data_json)
-            except (json.JSONDecodeError, TypeError) as e:
-                logger.error(f"Failed to parse snapshot_data JSON: {e}")
-                return {}
-        return {}
-
-    @snapshot_data.setter
-    def snapshot_data(self, value: dict):
-        """Store snapshot dict as JSON."""
-        self.snapshot_data_json = json.dumps(value) if value else None
 
 
 # ============================================================================
@@ -418,7 +353,7 @@ class ProcessingSession(Base):
     # Outputs
     excel_output_path: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     basil_output_path: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
-    pdf_output_paths_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON array
+    pdf_output_paths: Mapped[Optional[list]] = mapped_column(JSON, nullable=True)
     report_output_path: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
 
     # Performance
@@ -427,11 +362,11 @@ class ProcessingSession(Base):
     # Issues
     warnings_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     errors_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
-    warnings_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON array
-    errors_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON array
+    warnings: Mapped[Optional[list]] = mapped_column(JSON, nullable=True)
+    errors: Mapped[Optional[list]] = mapped_column(JSON, nullable=True)
 
     # Metadata
-    metadata_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    metadata: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
 
     # Relationships
     project: Mapped["Project"] = relationship("Project", back_populates="processing_sessions")
@@ -445,70 +380,6 @@ class ProcessingSession(Base):
 
     def __repr__(self):
         return f"<ProcessingSession(id={self.id}, project_id={self.project_id}, status='{self.status}')>"
-
-    @property
-    def pdf_output_paths(self):
-        """Parse PDF output paths JSON to list."""
-        if self.pdf_output_paths_json:
-            try:
-                return json.loads(self.pdf_output_paths_json)
-            except (json.JSONDecodeError, TypeError) as e:
-                logger.error(f"Failed to parse pdf_output_paths JSON: {e}")
-                return []
-        return []
-
-    @pdf_output_paths.setter
-    def pdf_output_paths(self, value: list):
-        """Store PDF output paths list as JSON."""
-        self.pdf_output_paths_json = json.dumps(value) if value else None
-
-    @property
-    def warnings(self):
-        """Parse warnings JSON to list."""
-        if self.warnings_json:
-            try:
-                return json.loads(self.warnings_json)
-            except (json.JSONDecodeError, TypeError) as e:
-                logger.error(f"Failed to parse warnings JSON: {e}")
-                return []
-        return []
-
-    @warnings.setter
-    def warnings(self, value: list):
-        """Store warnings list as JSON."""
-        self.warnings_json = json.dumps(value) if value else None
-
-    @property
-    def errors(self):
-        """Parse errors JSON to list."""
-        if self.errors_json:
-            try:
-                return json.loads(self.errors_json)
-            except (json.JSONDecodeError, TypeError) as e:
-                logger.error(f"Failed to parse errors JSON: {e}")
-                return []
-        return []
-
-    @errors.setter
-    def errors(self, value: list):
-        """Store errors list as JSON."""
-        self.errors_json = json.dumps(value) if value else None
-
-    @property
-    def metadata(self):
-        """Parse metadata JSON to dict."""
-        if self.metadata_json:
-            try:
-                return json.loads(self.metadata_json)
-            except (json.JSONDecodeError, TypeError) as e:
-                logger.error(f"Failed to parse metadata JSON: {e}")
-                return {}
-        return {}
-
-    @metadata.setter
-    def metadata(self, value: dict):
-        """Store metadata dict as JSON."""
-        self.metadata_json = json.dumps(value) if value else None
 
 
 # ============================================================================
@@ -532,14 +403,14 @@ class KeywordProfile(Base):
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Keywords (JSON array)
-    keywords_json: Mapped[str] = mapped_column(Text, nullable=False)
+    keywords: Mapped[list] = mapped_column(JSON, nullable=False)
 
     # Profile Type
     is_predefined: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now(), nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=func.now(), onupdate=func.now(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=func.now(), nullable=False)
 
     # Indexes
     __table_args__ = (
@@ -548,19 +419,3 @@ class KeywordProfile(Base):
 
     def __repr__(self):
         return f"<KeywordProfile(id={self.id}, name='{self.name}')>"
-
-    @property
-    def keywords(self):
-        """Parse keywords JSON to list."""
-        if self.keywords_json:
-            try:
-                return json.loads(self.keywords_json)
-            except (json.JSONDecodeError, TypeError) as e:
-                logger.error(f"Failed to parse keywords JSON: {e}")
-                return []
-        return []
-
-    @keywords.setter
-    def keywords(self, value: list):
-        """Store keywords list as JSON."""
-        self.keywords_json = json.dumps(value) if value else None
