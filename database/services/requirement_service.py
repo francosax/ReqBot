@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import func, and_
 
-from database.models import Requirement, RequirementHistory, Document
+from database.models import Requirement, RequirementHistory, Document, Priority, ChangeType
 from database.database import DatabaseSession
 
 logger = logging.getLogger(__name__)
@@ -31,7 +31,7 @@ class RequirementService:
         description: str,
         page_number: int,
         keyword: Optional[str] = None,
-        priority: Optional[str] = None,
+        priority: Optional[Priority] = None,
         category: Optional[str] = None,
         confidence_score: Optional[float] = None,
         raw_text: Optional[str] = None,
@@ -49,7 +49,7 @@ class RequirementService:
             description: Requirement description text
             page_number: Page number in source document
             keyword: Matching keyword (optional)
-            priority: Priority level (high, medium, low, security)
+            priority: Priority level (Priority enum: HIGH, MEDIUM, LOW, SECURITY)
             category: Category (Functional, Safety, etc.)
             confidence_score: Extraction confidence (0.0-1.0)
             raw_text: Original raw text (optional)
@@ -87,7 +87,7 @@ class RequirementService:
             RequirementService._create_history_record(
                 session=session,
                 requirement=req,
-                change_type='created',
+                change_type=ChangeType.CREATED,
                 change_description='Initial extraction'
             )
 
@@ -134,7 +134,7 @@ class RequirementService:
                 RequirementService._create_history_record(
                     session=session,
                     requirement=req,
-                    change_type='created',
+                    change_type=ChangeType.CREATED,
                     change_description='Initial extraction'
                 )
 
@@ -155,7 +155,7 @@ class RequirementService:
     def _create_history_record(
         session: Session,
         requirement: Requirement,
-        change_type: str,
+        change_type: ChangeType,
         change_description: Optional[str] = None,
         changed_by: Optional[str] = None
     ) -> RequirementHistory:
@@ -165,7 +165,7 @@ class RequirementService:
         Args:
             session: Database session
             requirement: Requirement object
-            change_type: Type of change (created, updated, deleted, merged)
+            change_type: Type of change (ChangeType enum)
             change_description: Description of change (optional)
             changed_by: User who made the change (optional)
 
@@ -268,7 +268,7 @@ class RequirementService:
     def filter_requirements(
         project_id: Optional[int] = None,
         document_id: Optional[int] = None,
-        priority: Optional[str] = None,
+        priority: Optional[Priority] = None,
         category: Optional[str] = None,
         min_confidence: Optional[float] = None,
         max_confidence: Optional[float] = None,
@@ -282,7 +282,7 @@ class RequirementService:
         Args:
             project_id: Filter by project
             document_id: Filter by document
-            priority: Filter by priority (high, medium, low, security)
+            priority: Filter by priority (Priority enum)
             category: Filter by category
             min_confidence: Minimum confidence score
             max_confidence: Maximum confidence score
@@ -329,7 +329,7 @@ class RequirementService:
     def update_requirement(
         requirement_id: int,
         description: Optional[str] = None,
-        priority: Optional[str] = None,
+        priority: Optional[Priority] = None,
         category: Optional[str] = None,
         confidence_score: Optional[float] = None,
         is_manually_edited: bool = True,
@@ -342,7 +342,7 @@ class RequirementService:
         Args:
             requirement_id: Requirement ID
             description: New description (optional)
-            priority: New priority (optional)
+            priority: New priority (Priority enum, optional)
             category: New category (optional)
             confidence_score: New confidence score (optional)
             is_manually_edited: Mark as manually edited
@@ -385,7 +385,7 @@ class RequirementService:
                 RequirementService._create_history_record(
                     session=session,
                     requirement=req,
-                    change_type='updated',
+                    change_type=ChangeType.UPDATED,
                     change_description=change_desc,
                     changed_by=changed_by
                 )

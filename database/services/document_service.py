@@ -14,7 +14,7 @@ from pathlib import Path
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 
-from database.models import Document
+from database.models import Document, ProcessingStatus
 from database.database import DatabaseSession
 
 logger = logging.getLogger(__name__)
@@ -90,7 +90,7 @@ class DocumentService:
                 file_hash=computed_hash,
                 file_size_bytes=file_size,
                 page_count=page_count,
-                processing_status='pending'
+                processing_status=ProcessingStatus.PENDING
             )
 
             if metadata:
@@ -154,7 +154,7 @@ class DocumentService:
                     logger.info(f"Document {filename} changed (hash mismatch)")
                     existing_doc.file_hash = current_hash
                     existing_doc.file_path = file_path
-                    existing_doc.processing_status = 'pending'
+                    existing_doc.processing_status = ProcessingStatus.PENDING
                     existing_doc.processed_at = None
                     existing_doc.updated_at = datetime.now()
 
@@ -190,7 +190,7 @@ class DocumentService:
     @staticmethod
     def update_processing_status(
         document_id: int,
-        status: str,
+        status: ProcessingStatus,
         page_count: Optional[int] = None,
         session: Optional[Session] = None
     ) -> Optional[Document]:
@@ -199,7 +199,7 @@ class DocumentService:
 
         Args:
             document_id: Document ID
-            status: New status (pending, processing, completed, failed)
+            status: New status (ProcessingStatus enum)
             page_count: Number of pages (optional)
             session: Database session (optional)
 
@@ -216,7 +216,7 @@ class DocumentService:
             doc.processing_status = status
             doc.updated_at = datetime.now()
 
-            if status == 'completed':
+            if status == ProcessingStatus.COMPLETED:
                 doc.processed_at = datetime.now()
 
             if page_count is not None:
@@ -328,7 +328,7 @@ class DocumentService:
                 logger.info(f"Document {filename} has changed - should process")
                 return True
 
-            if existing_doc.processing_status == 'failed':
+            if existing_doc.processing_status == ProcessingStatus.FAILED:
                 logger.info(f"Document {filename} previously failed - should reprocess")
                 return True
 

@@ -7,14 +7,55 @@ Supports both SQLite and PostgreSQL databases.
 
 from datetime import datetime
 from typing import Optional, List
+from enum import Enum as PyEnum
 import json
+import logging
 
 from sqlalchemy import (
     Column, Integer, String, Text, Float, Boolean,
-    DateTime, ForeignKey, JSON, Index, UniqueConstraint
+    DateTime, ForeignKey, JSON, Index, UniqueConstraint, Enum
 )
 from sqlalchemy.orm import DeclarativeBase, relationship, Mapped, mapped_column
 from sqlalchemy.sql import func
+
+# Logger for this module
+logger = logging.getLogger(__name__)
+
+
+# ============================================================================
+# Enums for Type Safety
+# ============================================================================
+
+class ProcessingStatus(str, PyEnum):
+    """Document processing status enum."""
+    PENDING = "pending"
+    PROCESSING = "processing"
+    COMPLETED = "completed"
+    FAILED = "failed"
+
+
+class Priority(str, PyEnum):
+    """Requirement priority enum."""
+    HIGH = "high"
+    MEDIUM = "medium"
+    LOW = "low"
+    SECURITY = "security"
+
+
+class SessionStatus(str, PyEnum):
+    """Processing session status enum."""
+    RUNNING = "running"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
+
+
+class ChangeType(str, PyEnum):
+    """Requirement change type enum."""
+    CREATED = "created"
+    UPDATED = "updated"
+    DELETED = "deleted"
+    MERGED = "merged"
 
 
 # ============================================================================
@@ -80,7 +121,11 @@ class Project(Base):
     def metadata(self):
         """Parse metadata JSON to dict."""
         if self.metadata_json:
-            return json.loads(self.metadata_json)
+            try:
+                return json.loads(self.metadata_json)
+            except (json.JSONDecodeError, TypeError) as e:
+                logger.error(f"Failed to parse metadata JSON: {e}")
+                return {}
         return {}
 
     @metadata.setter
@@ -115,7 +160,11 @@ class Document(Base):
     page_count: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
     # Processing Status
-    processing_status: Mapped[str] = mapped_column(String(50), default='pending', nullable=False)  # pending, processing, completed, failed
+    processing_status: Mapped[ProcessingStatus] = mapped_column(
+        Enum(ProcessingStatus),
+        default=ProcessingStatus.PENDING,
+        nullable=False
+    )
     processed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
     # Timestamps
@@ -145,7 +194,11 @@ class Document(Base):
     def metadata(self):
         """Parse metadata JSON to dict."""
         if self.metadata_json:
-            return json.loads(self.metadata_json)
+            try:
+                return json.loads(self.metadata_json)
+            except (json.JSONDecodeError, TypeError) as e:
+                logger.error(f"Failed to parse metadata JSON: {e}")
+                return {}
         return {}
 
     @metadata.setter
@@ -186,7 +239,10 @@ class Requirement(Base):
 
     # Classification
     keyword: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)  # Matching keyword
-    priority: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)  # high, medium, low, security
+    priority: Mapped[Optional[Priority]] = mapped_column(
+        Enum(Priority),
+        nullable=True
+    )
     category: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)  # Functional, Safety, etc.
 
     # Quality Metrics
@@ -233,7 +289,11 @@ class Requirement(Base):
     def metadata(self):
         """Parse metadata JSON to dict."""
         if self.metadata_json:
-            return json.loads(self.metadata_json)
+            try:
+                return json.loads(self.metadata_json)
+            except (json.JSONDecodeError, TypeError) as e:
+                logger.error(f"Failed to parse metadata JSON: {e}")
+                return {}
         return {}
 
     @metadata.setter
@@ -265,12 +325,18 @@ class RequirementHistory(Base):
 
     # Snapshot of requirement at this version
     description: Mapped[str] = mapped_column(Text, nullable=False)
-    priority: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    priority: Mapped[Optional[Priority]] = mapped_column(
+        Enum(Priority),
+        nullable=True
+    )
     category: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     confidence_score: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
 
     # Change Tracking
-    change_type: Mapped[str] = mapped_column(String(50), nullable=False)  # created, updated, deleted, merged
+    change_type: Mapped[ChangeType] = mapped_column(
+        Enum(ChangeType),
+        nullable=False
+    )
     change_description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     changed_by: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)  # Future: user ID
     changed_at: Mapped[datetime] = mapped_column(DateTime, default=func.now(), nullable=False)
@@ -295,7 +361,11 @@ class RequirementHistory(Base):
     def snapshot_data(self):
         """Parse snapshot JSON to dict."""
         if self.snapshot_data_json:
-            return json.loads(self.snapshot_data_json)
+            try:
+                return json.loads(self.snapshot_data_json)
+            except (json.JSONDecodeError, TypeError) as e:
+                logger.error(f"Failed to parse snapshot_data JSON: {e}")
+                return {}
         return {}
 
     @snapshot_data.setter
@@ -325,7 +395,11 @@ class ProcessingSession(Base):
     # Session Info
     started_at: Mapped[datetime] = mapped_column(DateTime, default=func.now(), nullable=False)
     completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    status: Mapped[str] = mapped_column(String(50), default='running', nullable=False)  # running, completed, failed, cancelled
+    status: Mapped[SessionStatus] = mapped_column(
+        Enum(SessionStatus),
+        default=SessionStatus.RUNNING,
+        nullable=False
+    )
 
     # Configuration
     keywords_used: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # Comma-separated
@@ -376,7 +450,11 @@ class ProcessingSession(Base):
     def pdf_output_paths(self):
         """Parse PDF output paths JSON to list."""
         if self.pdf_output_paths_json:
-            return json.loads(self.pdf_output_paths_json)
+            try:
+                return json.loads(self.pdf_output_paths_json)
+            except (json.JSONDecodeError, TypeError) as e:
+                logger.error(f"Failed to parse pdf_output_paths JSON: {e}")
+                return []
         return []
 
     @pdf_output_paths.setter
@@ -388,7 +466,11 @@ class ProcessingSession(Base):
     def warnings(self):
         """Parse warnings JSON to list."""
         if self.warnings_json:
-            return json.loads(self.warnings_json)
+            try:
+                return json.loads(self.warnings_json)
+            except (json.JSONDecodeError, TypeError) as e:
+                logger.error(f"Failed to parse warnings JSON: {e}")
+                return []
         return []
 
     @warnings.setter
@@ -400,7 +482,11 @@ class ProcessingSession(Base):
     def errors(self):
         """Parse errors JSON to list."""
         if self.errors_json:
-            return json.loads(self.errors_json)
+            try:
+                return json.loads(self.errors_json)
+            except (json.JSONDecodeError, TypeError) as e:
+                logger.error(f"Failed to parse errors JSON: {e}")
+                return []
         return []
 
     @errors.setter
@@ -412,7 +498,11 @@ class ProcessingSession(Base):
     def metadata(self):
         """Parse metadata JSON to dict."""
         if self.metadata_json:
-            return json.loads(self.metadata_json)
+            try:
+                return json.loads(self.metadata_json)
+            except (json.JSONDecodeError, TypeError) as e:
+                logger.error(f"Failed to parse metadata JSON: {e}")
+                return {}
         return {}
 
     @metadata.setter
@@ -463,7 +553,11 @@ class KeywordProfile(Base):
     def keywords(self):
         """Parse keywords JSON to list."""
         if self.keywords_json:
-            return json.loads(self.keywords_json)
+            try:
+                return json.loads(self.keywords_json)
+            except (json.JSONDecodeError, TypeError) as e:
+                logger.error(f"Failed to parse keywords JSON: {e}")
+                return []
         return []
 
     @keywords.setter

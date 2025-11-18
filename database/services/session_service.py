@@ -11,7 +11,7 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 
-from database.models import ProcessingSession
+from database.models import ProcessingSession, SessionStatus
 from database.database import DatabaseSession
 
 logger = logging.getLogger(__name__)
@@ -49,7 +49,7 @@ class ProcessingSessionService:
                 keywords_used=keywords_used,
                 keyword_profile=keyword_profile,
                 confidence_threshold=confidence_threshold,
-                status='running'
+                status=SessionStatus.RUNNING
             )
 
             if metadata:
@@ -123,7 +123,7 @@ class ProcessingSessionService:
 
             # Update results
             proc_session.completed_at = datetime.now()
-            proc_session.status = 'completed'
+            proc_session.status = SessionStatus.COMPLETED
             proc_session.documents_processed = documents_processed
             proc_session.requirements_extracted = requirements_extracted
 
@@ -188,7 +188,7 @@ class ProcessingSessionService:
                 logger.warning(f"Processing session {session_id} not found")
                 return None
 
-            proc_session.status = 'failed'
+            proc_session.status = SessionStatus.FAILED
             proc_session.completed_at = datetime.now()
             proc_session.errors = [error_message]
             proc_session.errors_count = 1
@@ -236,7 +236,7 @@ class ProcessingSessionService:
                 logger.warning(f"Processing session {session_id} not found")
                 return None
 
-            proc_session.status = 'cancelled'
+            proc_session.status = SessionStatus.CANCELLED
             proc_session.completed_at = datetime.now()
 
             # Calculate processing time

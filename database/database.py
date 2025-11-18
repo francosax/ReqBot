@@ -103,7 +103,20 @@ def create_db_engine() -> Engine:
 
         _engine = create_engine(DATABASE_URL, **engine_options)
 
-        logger.info(f"Database engine created successfully: {DATABASE_URL.split('@')[-1]}")  # Hide password
+        # Sanitize URL for logging (hide passwords)
+        safe_url = DATABASE_URL
+        if '@' in DATABASE_URL:
+            # PostgreSQL: hide password
+            parts = DATABASE_URL.split('@')
+            if ':' in parts[0]:
+                # Format: postgresql://user:password@host
+                user_parts = parts[0].split(':')
+                safe_url = f"{':'.join(user_parts[:-1])}:***@{parts[1]}"
+        else:
+            # SQLite: just show it's sqlite
+            safe_url = "sqlite:///<local_db>"
+
+        logger.info(f"Database engine created successfully: {safe_url}")
         return _engine
 
     except Exception as e:
@@ -410,10 +423,20 @@ def get_database_info() -> dict:
     Returns:
         dict: Database information
     """
+    # Sanitize URL for display
+    safe_url = DATABASE_URL
+    if '@' in DATABASE_URL:
+        parts = DATABASE_URL.split('@')
+        if ':' in parts[0]:
+            user_parts = parts[0].split(':')
+            safe_url = f"{':'.join(user_parts[:-1])}:***@{parts[1]}"
+    else:
+        safe_url = "sqlite:///<local_db>"
+
     info = {
         'enabled': DATABASE_ENABLED,
         'legacy_mode': LEGACY_MODE,
-        'url': DATABASE_URL.split('@')[-1],  # Hide password
+        'url': safe_url,
         'type': 'sqlite' if is_sqlite() else 'postgresql',
         'tables': list(Base.metadata.tables.keys()),
         'connection_ok': check_database_connection()
@@ -486,12 +509,24 @@ def execute_in_transaction(func, *args, **kwargs):
 
 
 # ============================================================================
-# Initialization on Import
+# Initialization Helper
 # ============================================================================
 
-# Auto-initialize if database is enabled
-if DATABASE_ENABLED and not LEGACY_MODE:
-    logger.info("Database module loaded, initializing...")
+def auto_initialize_database():
+    """
+    Auto-initialize database on application startup.
+
+    This should be called explicitly from main_app.py or application entry point,
+    NOT at module import time to avoid circular dependencies and test issues.
+
+    Returns:
+        bool: True if initialization successful, False otherwise
+    """
+    if LEGACY_MODE or not DATABASE_ENABLED:
+        logger.info("Database auto-initialization skipped (legacy mode or disabled)")
+        return False
+
+    logger.info("Auto-initializing database...")
     try:
         # Create engine and check connection
         create_db_engine()
@@ -501,12 +536,14 @@ if DATABASE_ENABLED and not LEGACY_MODE:
         if is_sqlite():
             db_path = get_sqlite_path()
             if not db_path.exists():
-                logger.info("Database file not found, initializing...")
+                logger.info("Database file not found, creating schema...")
                 init_database(create_backup=False)
+
+        logger.info("Database auto-initialization complete")
+        return True
     except Exception as e:
         logger.error(f"Failed to auto-initialize database: {e}")
-else:
-    logger.info("Database module loaded in legacy mode or disabled")
+        return False
 
 
 # ============================================================================
