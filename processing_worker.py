@@ -20,12 +20,13 @@ class ProcessingWorker(QObject):
     finished = Signal(str) # Message on successful completion
     error_occurred = Signal(str, str) # Error message, title for MessageBox
 
-    def __init__(self, folder_input, folder_output, CM_file, confidence_threshold=0.5):
+    def __init__(self, folder_input, folder_output, CM_file, confidence_threshold=0.5, keywords=None):
         super().__init__()
         self._folder_input = folder_input
         self._folder_output = folder_output
         self._CM_file = CM_file
         self._confidence_threshold = confidence_threshold  # Store confidence threshold
+        self._keywords = keywords  # v2.2: Optional keywords set
         self._is_running = True
 
     def run(self):
@@ -41,8 +42,13 @@ class ProcessingWorker(QObject):
         report.start_processing()
 
         try:
-            parole_chiave = load_keyword_config()
-            self.log_message.emit(f"Keywords loaded: {', '.join(parole_chiave)}", "info")
+            # v2.2: Use provided keywords if available, otherwise load from config
+            if self._keywords:
+                parole_chiave = self._keywords
+                self.log_message.emit(f"Using selected keyword profile: {', '.join(parole_chiave)}", "info")
+            else:
+                parole_chiave = load_keyword_config()
+                self.log_message.emit(f"Keywords loaded from config: {', '.join(parole_chiave)}", "info")
 
             # Set report metadata
             report.set_metadata(list(parole_chiave), self._confidence_threshold)

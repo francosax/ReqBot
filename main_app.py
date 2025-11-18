@@ -24,6 +24,9 @@ from version import GUI_VERSION
 # Import recent projects manager (NEW)
 from recent_projects import get_recents_manager
 
+# Import keyword profiles manager (v2.2)
+from keyword_profiles import get_profiles_manager
+
 # --- Constants for paths, messages, etc. ---
 CM_TEMPLATE_NAME = 'Compliance_Matrix_Template_rev001.xlsx'
 
@@ -48,6 +51,7 @@ class RequirementBotApp(QWidget):
         self._worker_thread = None # Initialize worker thread as None
         self._worker = None        # Initialize worker object as None
         self.recents_manager = get_recents_manager()  # NEW: Initialize recents manager
+        self.profiles_manager = get_profiles_manager()  # v2.2: Initialize profiles manager
         self.init_logging() # Setup logging before UI
         self.init_ui()
         self._apply_stylesheet() # Apply stylesheet after UI is initialized
@@ -138,6 +142,33 @@ class RequirementBotApp(QWidget):
         confidence_layout.addStretch()
 
         settings_layout.addLayout(confidence_layout)
+
+        # v2.2: Keyword Profile Selection
+        profile_layout = QHBoxLayout()
+        profile_label = QLabel("Keyword Profile:")
+        profile_label.setToolTip("Select a predefined keyword set or create a custom profile")
+
+        self.profile_combo = QComboBox()
+        self.profile_combo.setToolTip("Choose a keyword profile optimized for your domain")
+        # Populate with available profiles
+        for profile_name in self.profiles_manager.get_profile_names():
+            self.profile_combo.addItem(profile_name)
+        # Set default to "Generic"
+        default_index = self.profile_combo.findText("Generic")
+        if default_index >= 0:
+            self.profile_combo.setCurrentIndex(default_index)
+
+        self.manage_profiles_btn = QPushButton("Manage Profiles...")
+        self.manage_profiles_btn.setToolTip("Create, edit, or delete custom keyword profiles")
+        self.manage_profiles_btn.clicked.connect(self.manage_keyword_profiles)
+        self.manage_profiles_btn.setMaximumWidth(150)
+
+        profile_layout.addWidget(profile_label)
+        profile_layout.addWidget(self.profile_combo)
+        profile_layout.addWidget(self.manage_profiles_btn)
+        profile_layout.addStretch()
+
+        settings_layout.addLayout(profile_layout)
         settings_group_box.setLayout(settings_layout)
         main_layout.addWidget(settings_group_box)
 
@@ -409,13 +440,19 @@ class RequirementBotApp(QWidget):
         confidence_threshold = self.confidence_spinbox.value()
         self.logger.info(f"Using confidence threshold: {confidence_threshold:.2f}")
 
+        # v2.2: Get keywords from selected profile
+        selected_profile = self.profile_combo.currentText()
+        keywords = self.profiles_manager.get_keywords(selected_profile)
+        self.logger.info(f"Using keyword profile: {selected_profile} ({len(keywords)} keywords)")
+
         # Create a QThread and move the worker to it
         self._worker_thread = QThread()
         self._worker = ProcessingWorker(
             folder_input,
             folder_output,
             CM_file,
-            confidence_threshold  # Pass confidence threshold to worker
+            confidence_threshold,  # Pass confidence threshold to worker
+            keywords=keywords  # v2.2: Pass keywords from selected profile
         )
         self._worker.moveToThread(self._worker_thread)
 
@@ -489,6 +526,168 @@ class RequirementBotApp(QWidget):
         self._set_ui_enabled(True) # Re-enable UI
         self.progressBar.setValue(0) # Reset progress
         self.log_display.append(f"<span style='color: red;'>Error: {error_message}</span>")
+
+
+    def manage_keyword_profiles(self):
+        """v2.2: Open dialog to manage keyword profiles."""
+        from PySide6.QtWidgets import QDialog, QListWidget, QTextEdit, QDialogButtonBox, QInputDialog
+
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Manage Keyword Profiles")
+        dialog.resize(600, 400)
+
+        layout = QVBoxLayout(dialog)
+
+        # Profile list
+        list_label = QLabel("Available Profiles:")
+        layout.addWidget(list_label)
+
+        profile_list = QListWidget()
+        for name in self.profiles_manager.get_profile_names():
+            profile = self.profiles_manager.get_profile(name)
+            display_text = name
+            if not profile.is_custom:
+                display_text += " (Predefined)"
+            profile_list.addItem(display_text)
+        layout.addWidget(profile_list)
+
+        # Profile details
+        details_label = QLabel("Profile Details:")
+        layout.addWidget(details_label)
+
+        details_text = QTextEdit()
+        details_text.setReadOnly(True)
+        details_text.setMaximumHeight(150)
+        layout.addWidget(details_text)
+
+        # Update details when selection changes
+        def update_details():
+            selected_items = profile_list.selectedItems()
+            if selected_items:
+                name = selected_items[0].text().replace(" (Predefined)", "")
+                profile = self.profiles_manager.get_profile(name)
+                if profile:
+                    details = f"Name: {profile.name}\n"
+                    details += f"Type: {'Custom' if profile.is_custom else 'Predefined'}\n"
+                    details += f"Description: {profile.description}\n\n"
+                    details += f"Keywords ({len(profile.keywords)}):\n"
+                    details += ", ".join(sorted(profile.keywords))
+                    details_text.setText(details)
+
+        profile_list.itemSelectionChanged.connect(update_details)
+
+        # Action buttons
+        button_layout = QHBoxLayout()
+
+        new_btn = QPushButton("New Profile...")
+        new_btn.clicked.connect(lambda: self._create_new_profile(dialog, profile_list))
+
+        delete_btn = QPushButton("Delete Selected")
+        delete_btn.clicked.connect(lambda: self._delete_selected_profile(profile_list))
+
+        button_layout.addWidget(new_btn)
+        button_layout.addWidget(delete_btn)
+        button_layout.addStretch()
+        layout.addLayout(button_layout)
+
+        # Dialog buttons
+        button_box = QDialogButtonBox(QDialogButtonBox.Close)
+        button_box.rejected.connect(dialog.reject)
+        layout.addWidget(button_box)
+
+        dialog.exec()
+
+        # Refresh the profile combo box in main window
+        current_selection = self.profile_combo.currentText()
+        self.profile_combo.clear()
+        for profile_name in self.profiles_manager.get_profile_names():
+            self.profile_combo.addItem(profile_name)
+        # Restore selection if still exists
+        index = self.profile_combo.findText(current_selection)
+        if index >= 0:
+            self.profile_combo.setCurrentIndex(index)
+
+
+    def _create_new_profile(self, parent_dialog, profile_list):
+        """Helper to create a new keyword profile."""
+        from PySide6.QtWidgets import QInputDialog
+
+        # Get profile name
+        name, ok = QInputDialog.getText(parent_dialog, "New Profile", "Enter profile name:")
+        if not ok or not name:
+            return
+
+        # Get description
+        desc, ok = QInputDialog.getText(parent_dialog, "New Profile", "Enter description:")
+        if not ok:
+            desc = ""
+
+        # Get keywords (comma-separated)
+        keywords_str, ok = QInputDialog.getMultiLineText(
+            parent_dialog,
+            "New Profile",
+            "Enter keywords (one per line):",
+            "shall\nmust\nshould"
+        )
+        if not ok or not keywords_str:
+            return
+
+        # Parse keywords
+        keywords = [kw.strip() for kw in keywords_str.split('\n') if kw.strip()]
+
+        if not keywords:
+            QMessageBox.warning(parent_dialog, "Invalid Input", "At least one keyword is required.")
+            return
+
+        # Add profile
+        if self.profiles_manager.add_profile(name, keywords, desc):
+            QMessageBox.information(parent_dialog, "Success", f"Profile '{name}' created successfully!")
+            # Refresh list
+            profile_list.clear()
+            for pname in self.profiles_manager.get_profile_names():
+                profile = self.profiles_manager.get_profile(pname)
+                display_text = pname
+                if not profile.is_custom:
+                    display_text += " (Predefined)"
+                profile_list.addItem(display_text)
+        else:
+            QMessageBox.warning(parent_dialog, "Error", f"Failed to create profile '{name}'.")
+
+
+    def _delete_selected_profile(self, profile_list):
+        """Helper to delete selected profile."""
+        selected_items = profile_list.selectedItems()
+        if not selected_items:
+            QMessageBox.warning(self, "No Selection", "Please select a profile to delete.")
+            return
+
+        name = selected_items[0].text().replace(" (Predefined)", "")
+        profile = self.profiles_manager.get_profile(name)
+
+        if not profile.is_custom:
+            QMessageBox.warning(self, "Cannot Delete", "Predefined profiles cannot be deleted.")
+            return
+
+        reply = QMessageBox.question(
+            self,
+            "Confirm Delete",
+            f"Are you sure you want to delete profile '{name}'?",
+            QMessageBox.Yes | QMessageBox.No
+        )
+
+        if reply == QMessageBox.Yes:
+            if self.profiles_manager.delete_profile(name):
+                QMessageBox.information(self, "Success", f"Profile '{name}' deleted successfully!")
+                # Refresh list
+                profile_list.clear()
+                for pname in self.profiles_manager.get_profile_names():
+                    prf = self.profiles_manager.get_profile(pname)
+                    display_text = pname
+                    if not prf.is_custom:
+                        display_text += " (Predefined)"
+                    profile_list.addItem(display_text)
+            else:
+                QMessageBox.warning(self, "Error", f"Failed to delete profile '{name}'.")
 
 
     def closeEvent(self, event):

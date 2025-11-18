@@ -14,7 +14,7 @@ def write_excel_file(df, excel_file):
 
     Args:
         df (pandas.DataFrame): The DataFrame containing data to write.
-                               Expected columns: 'Page', 'Label Number', 'Description', 'Priority', 'Confidence'.
+                               Expected columns: 'Page', 'Label Number', 'Description', 'Priority', 'Confidence', 'Category'.
                                The DataFrame index is used for 'A' column.
         excel_file (str): The path to the existing Excel file to be updated.
     """
@@ -41,8 +41,8 @@ def write_excel_file(df, excel_file):
 
         # Update the Compliance Matrix with the requirements
         # Starting from row 5
-        for i, (value1, value2, value3, value4, value5, value6) in enumerate(
-                zip(df.index, df['Page'], df['Label Number'], df['Description'], df['Priority'], df['Confidence']), start=5):
+        for i, (value1, value2, value3, value4, value5, value6, value7) in enumerate(
+                zip(df.index, df['Page'], df['Label Number'], df['Description'], df['Priority'], df['Confidence'], df['Category']), start=5):
 
             writer[f'A{i}'] = value1         # df.index
             writer[f'B{i}'] = value2         # Page
@@ -50,6 +50,7 @@ def write_excel_file(df, excel_file):
             writer[f'D{i}'] = value4         # Description
             writer[f'E{i}'] = value6         # Confidence (NEW)
             writer[f'I{i}'] = value5         # Priority (SHIFTED from H to I due to Confidence)
+            writer[f'J{i}'] = value7         # Category (v2.2)
 
             # Apply fill based on priority (column I - shifted from H)
             priority = str(value5).lower() # Ensure priority is string and lowercase for comparison

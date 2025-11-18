@@ -108,13 +108,17 @@ This document tracks future enhancements, feature requests, and improvements for
   - Process multiple folders in one run
   - Generate combined compliance matrix
   - Progress tracking for batch operations
+  - **Status**: Planned for future release
 
-- [ ] **Requirement Categories/Tags**
+- [x] **Requirement Categories/Tags** ✅ **COMPLETED**
   - Priority: Medium
   - Effort: 4-5 days
-  - Auto-categorize requirements (functional, safety, performance, etc.)
-  - Add category column to Excel output
-  - Use NLP patterns for categorization
+  - ✅ Auto-categorize requirements (functional, safety, performance, etc.)
+  - ✅ Add category column to Excel output (Column J)
+  - ✅ Use NLP patterns for categorization
+  - Location: `requirement_categorizer.py`, integrated in `pdf_analyzer.py`, `excel_writer.py`
+  - **Implementation Date**: 2025-11-18
+  - **Details**: Automatic categorization into 9 categories (Functional, Safety, Performance, Security, Interface, Data, Compliance, Documentation, Testing) using keyword matching and regex patterns. Categories automatically added to Excel output in column J.
 
 - [ ] **Search/Filter in Results**
   - Priority: Medium
@@ -122,13 +126,17 @@ This document tracks future enhancements, feature requests, and improvements for
   - Add search functionality in GUI for extracted requirements
   - Filter by page, keyword, priority, confidence
   - Preview before exporting
+  - **Status**: Deferred to future release (complex GUI work)
 
-- [ ] **Custom Keyword Sets**
+- [x] **Custom Keyword Sets** ✅ **COMPLETED**
   - Priority: Medium
   - Effort: 2-3 days
-  - Allow multiple keyword profiles (aerospace, medical, automotive)
-  - Save/load keyword sets from GUI
-  - Predefined templates for common domains
+  - ✅ Allow multiple keyword profiles (aerospace, medical, automotive)
+  - ✅ Save/load keyword sets from GUI
+  - ✅ Predefined templates for common domains
+  - Location: `keyword_profiles.py`, integrated in `main_app.py`, `processing_worker.py`
+  - **Implementation Date**: 2025-11-18
+  - **Details**: Full keyword profile management system with 6 predefined profiles (Generic, Aerospace, Medical, Automotive, Software, Safety). GUI includes profile selector dropdown and "Manage Profiles" dialog for creating, editing, and deleting custom profiles. Profiles saved to keyword_profiles.json.
 
 - [ ] **Undo/Redo for Manual Edits**
   - Priority: Low
