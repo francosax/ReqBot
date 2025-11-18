@@ -432,6 +432,24 @@ class RequirementBotApp(QWidget):
 
     def start_processing(self):
         """Initiates the processing in a separate thread."""
+
+        # CRITICAL FIX: Prevent multiple simultaneous processing
+        if self._worker_thread and self._worker_thread.isRunning():
+            QMessageBox.warning(
+                self,
+                "Processing In Progress",
+                "A processing task is already running. Please wait for it to complete or use the Cancel button."
+            )
+            self.logger.warning("Attempted to start processing while already running")
+            return
+
+        # Cleanup any previous thread/worker to prevent memory leaks
+        if self._worker_thread:
+            self._worker_thread.wait()  # Wait for thread to finish if it's terminating
+            self._worker_thread = None
+        if self._worker:
+            self._worker = None
+
         if not self._validate_inputs():
             return
 
@@ -492,6 +510,11 @@ class RequirementBotApp(QWidget):
             self._worker.stop()
             self._worker_thread.quit() # Request the thread to quit
             self._worker_thread.wait() # Wait for the thread to finish
+
+            # Clean up references to allow garbage collection
+            self._worker_thread = None
+            self._worker = None
+
             self.logger.warning("Processing cancelled by user.")
             QMessageBox.information(self, "Processing Cancelled", "The processing has been stopped.")
             self._set_ui_enabled(True) # Re-enable UI
@@ -527,6 +550,16 @@ class RequirementBotApp(QWidget):
     def on_processing_finished(self, message):
         """Called when worker successfully finishes."""
         self.logger.info(f"Processing finished: {message}")
+
+        # CRITICAL: Properly terminate and clean up the thread
+        if self._worker_thread and self._worker_thread.isRunning():
+            self._worker_thread.quit()  # Stop the thread's event loop
+            self._worker_thread.wait()  # Wait for thread to finish
+
+        # Clean up references to allow garbage collection
+        self._worker_thread = None
+        self._worker = None
+
         QMessageBox.information(self, 'Processing Completed', message)
         self._set_ui_enabled(True) # Re-enable UI
         self.progressBar.setValue(0) # Reset progress
@@ -536,6 +569,16 @@ class RequirementBotApp(QWidget):
     def on_processing_error(self, error_message, title):
         """Called when worker encounters a critical error."""
         self.logger.error(f"Processing error: {error_message}")
+
+        # CRITICAL: Properly terminate and clean up the thread
+        if self._worker_thread and self._worker_thread.isRunning():
+            self._worker_thread.quit()  # Stop the thread's event loop
+            self._worker_thread.wait()  # Wait for thread to finish
+
+        # Clean up references to allow garbage collection
+        self._worker_thread = None
+        self._worker = None
+
         QMessageBox.critical(self, title, error_message)
         self._set_ui_enabled(True) # Re-enable UI
         self.progressBar.setValue(0) # Reset progress
