@@ -1,8 +1,8 @@
 # ReqBot TODO List & Future Suggestions
 
-**Last Updated**: 2025-11-18
-**Current Version**: 2.1.1
-**In Development**: v3.0 - Multi-lingual Extraction (claude/multilingual-extraction-v3.0)
+**Last Updated**: 2025-11-19
+**Current Version**: 2.2.0 (Development Baseline)
+**Status**: v2.2 features in development, v3.0 multilingual features merged to main
 
 This document tracks future enhancements, feature requests, and improvements for ReqBot.
 
