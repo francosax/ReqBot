@@ -10,9 +10,15 @@ from config_RB import load_keyword_config
 from get_all_files import get_all
 from report_generator import create_processing_report
 
-# v3.0: Database services
-from database.services.project_service import ProjectService
-from database.services.session_service import ProcessingSessionService
+# v3.0: Database services - Optional dependency
+try:
+    from database.services.project_service import ProjectService
+    from database.services.session_service import ProcessingSessionService
+    DATABASE_AVAILABLE = True
+except ImportError:
+    DATABASE_AVAILABLE = False
+    ProjectService = None
+    ProcessingSessionService = None
 
 # Set up logging for the worker
 worker_logger = logging.getLogger(__name__)
@@ -50,27 +56,28 @@ class ProcessingWorker(QObject):
         # v3.0: Create or retrieve project
         project = None
         processing_session = None
-        try:
-            # Generate project name from input folder
-            project_name = os.path.basename(self._folder_input.rstrip(os.sep))
-            if not project_name:
-                project_name = "ReqBot Project"
+        if DATABASE_AVAILABLE:
+            try:
+                # Generate project name from input folder
+                project_name = os.path.basename(self._folder_input.rstrip(os.sep))
+                if not project_name:
+                    project_name = "ReqBot Project"
 
-            # Get or create project
-            project = ProjectService.get_or_create_project(
-                name=project_name,
-                input_folder_path=self._folder_input,
-                output_folder_path=self._folder_output,
-                compliance_matrix_template=self._CM_file
-            )
+                # Get or create project
+                project = ProjectService.get_or_create_project(
+                    name=project_name,
+                    input_folder_path=self._folder_input,
+                    output_folder_path=self._folder_output,
+                    compliance_matrix_template=self._CM_file
+                )
 
-            if project:
-                self.log_message.emit(f"Project initialized: {project.name} (ID: {project.id})", "info")
-            else:
-                self.log_message.emit("Warning: Could not initialize database project", "warning")
-        except Exception as e:
-            worker_logger.error(f"Failed to initialize project: {str(e)}")
-            self.log_message.emit("Warning: Database project creation failed, continuing without persistence", "warning")
+                if project:
+                    self.log_message.emit(f"Project initialized: {project.name} (ID: {project.id})", "info")
+                else:
+                    self.log_message.emit("Warning: Could not initialize database project", "warning")
+            except Exception as e:
+                worker_logger.error(f"Failed to initialize project: {str(e)}")
+                self.log_message.emit("Warning: Database project creation failed, continuing without persistence", "warning")
 
         try:
             # v2.2: Use provided keywords if available, otherwise load from config
@@ -100,7 +107,7 @@ class ProcessingWorker(QObject):
             self.progress_detail_updated.emit(f"Found {total_files} PDF file(s) to process")
 
             # v3.0: Create processing session
-            if project:
+            if DATABASE_AVAILABLE and project:
                 try:
                     processing_session = ProcessingSessionService.create_session(
                         project_id=project.id,
@@ -214,7 +221,7 @@ class ProcessingWorker(QObject):
             report.end_processing()
 
             # v3.0: Complete processing session
-            if processing_session:
+            if DATABASE_AVAILABLE and processing_session:
                 try:
                     # Calculate average confidence across all files
                     overall_avg_confidence = total_requirements / total_files if total_files > 0 else 0.0
@@ -241,7 +248,7 @@ class ProcessingWorker(QObject):
                 self.log_message.emit(f"HTML report generated: {report_path}", "info")
 
                 # v3.0: Update session with report path
-                if processing_session:
+                if DATABASE_AVAILABLE and processing_session:
                     try:
                         proc_session = ProcessingSessionService.get_session_by_id(processing_session.id)
                         if proc_session:

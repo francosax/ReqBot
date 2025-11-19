@@ -27,8 +27,13 @@ from recent_projects import get_recents_manager
 # Import keyword profiles manager (v2.2)
 from keyword_profiles import get_profiles_manager
 
-# Import database initialization (v3.0)
-from database.database import auto_initialize_database
+# Import database initialization (v3.0) - Optional dependency
+try:
+    from database.database import auto_initialize_database
+    DATABASE_AVAILABLE = True
+except ImportError:
+    DATABASE_AVAILABLE = False
+    auto_initialize_database = None
 
 # --- Constants for paths, messages, etc. ---
 CM_TEMPLATE_NAME = 'Compliance_Matrix_Template_rev001.xlsx'
@@ -129,6 +134,11 @@ class RequirementBotApp(QWidget):
 
     def init_database(self):
         """Initialize the database backend (v3.0)."""
+        if not DATABASE_AVAILABLE:
+            self.logger.info("Database backend not available (SQLAlchemy not installed)")
+            self.logger.info("Application will run without database persistence")
+            return
+
         try:
             auto_initialize_database()
             self.logger.info("Database backend initialized successfully")
