@@ -165,7 +165,7 @@ def test_progress_details_integration():
         for i, line in enumerate(gui_lines):
             if 'on_processing_finished' in line:
                 # Check next 10 lines for reset
-                next_lines = '\n'.join(gui_lines[i:i+15])
+                next_lines = '\n'.join(gui_lines[i:i + 15])
                 if 'progress_detail_label.setText("Ready to process")' in next_lines:
                     print("✓ Label reset on processing completion")
                     reset_count += 1
@@ -174,7 +174,7 @@ def test_progress_details_integration():
         # Check reset on error
         for i, line in enumerate(gui_lines):
             if 'on_processing_error' in line:
-                next_lines = '\n'.join(gui_lines[i:i+15])
+                next_lines = '\n'.join(gui_lines[i:i + 15])
                 if 'progress_detail_label.setText("Ready to process")' in next_lines:
                     print("✓ Label reset on processing error")
                     reset_count += 1
@@ -183,7 +183,7 @@ def test_progress_details_integration():
         # Check reset on cancel
         for i, line in enumerate(gui_lines):
             if 'cancel_processing' in line and 'def' in line:
-                next_lines = '\n'.join(gui_lines[i:i+20])
+                next_lines = '\n'.join(gui_lines[i:i + 20])
                 if 'progress_detail_label.setText("Ready to process")' in next_lines:
                     print("✓ Label reset on processing cancellation")
                     reset_count += 1
@@ -208,7 +208,7 @@ def test_progress_details_integration():
         for i, line in enumerate(gui_lines):
             if 'def update_progress_detail(self, detail_message):' in line:
                 method_found = True
-                method_lines = '\n'.join(gui_lines[i:i+10])
+                method_lines = '\n'.join(gui_lines[i:i + 10])
 
                 # Check setText call
                 if 'self.progress_detail_label.setText(detail_message)' in method_lines:

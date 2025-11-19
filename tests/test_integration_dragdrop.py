@@ -149,21 +149,21 @@ def test_dragdrop_integration():
             # Input folder: only folders
             if 'self.folderPath_input = self._create_path_selector' in line:
                 # Check next few lines for configuration
-                config_lines = '\n'.join(lines[i:i+3])
+                config_lines = '\n'.join(lines[i:i + 3])
                 if 'accept_files=False' in config_lines and 'accept_folders=True' in config_lines:
                     input_folder_config = True
                     print(f"✓ Input folder accepts only folders (line {i+1})")
 
             # Output folder: only folders
             if 'self.folderPath_output = self._create_path_selector' in line:
-                config_lines = '\n'.join(lines[i:i+3])
+                config_lines = '\n'.join(lines[i:i + 3])
                 if 'accept_files=False' in config_lines and 'accept_folders=True' in config_lines:
                     output_folder_config = True
                     print(f"✓ Output folder accepts only folders (line {i+1})")
 
             # CM path: only .xlsx files
             if 'self.CM_path = self._create_path_selector' in line:
-                config_lines = '\n'.join(lines[i:i+4])
+                config_lines = '\n'.join(lines[i:i + 4])
                 if 'accept_files=True' in config_lines and 'accept_folders=False' in config_lines and "file_extension='.xlsx'" in config_lines:  # noqa: E501
                     cm_file_config = True
                     print(f"✓ CM path accepts only .xlsx files (line {i+1})")

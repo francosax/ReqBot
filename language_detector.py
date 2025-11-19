@@ -222,7 +222,7 @@ class LanguageDetector:
         Different languages have different character sequence patterns.
         """
         # Extract trigrams (simplified for performance)
-        trigrams = [text[i:i+3] for i in range(len(text) - 2)]
+        trigrams = [text[i:i + 3] for i in range(len(text) - 2)]
 
         # Language-specific trigram patterns (most common and distinctive)
         lang_trigrams = {

@@ -1,6 +1,7 @@
 [flake8]
 max-line-length = 127
-exclude = 
+max-complexity = 50
+exclude =
     .venv,
     venv,
     __pycache__,
@@ -14,3 +15,6 @@ per-file-ignores =
     report_generator.py:F841
     tests/*:F841
     __init__.py:F401
+ignore =
+    W503,
+    W504
