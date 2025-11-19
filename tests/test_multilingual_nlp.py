@@ -70,7 +70,7 @@ class TestModelManagement:
     def test_model_loading_attempt(self, nlp):
         """Test that model loading is attempted."""
         # Try to load English model (may fail if spaCy not installed)
-        model = nlp.get_model('en')
+        nlp.get_model('en')
         # Either model is loaded or marked as failed
         assert 'en' in nlp._load_attempts
 
@@ -90,7 +90,7 @@ class TestModelManagement:
         """Test handling of invalid language codes."""
         model = nlp.get_model('invalid_lang')
         assert model is None
-        assert nlp._load_attempts.get('invalid_lang') == False
+        assert nlp._load_attempts.get('invalid_lang') is False
 
     def test_is_model_available(self, nlp):
         """Test model availability checking."""
@@ -99,7 +99,7 @@ class TestModelManagement:
         assert isinstance(is_available, bool)
 
         # Check invalid language
-        assert nlp.is_model_available('invalid') == False
+        assert nlp.is_model_available('invalid') is False
 
     def test_get_available_languages(self, nlp):
         """Test getting list of available languages."""
@@ -331,7 +331,7 @@ class TestSentenceQuality:
         is_valid, score = nlp.check_sentence_quality(sentence, keywords, 'en')
 
         # Should be valid (contains 'shall')
-        assert is_valid == True
+        assert is_valid is True
         assert 0.0 <= score <= 1.0
         assert score >= 0.5  # Valid requirements score >= 0.5
 
@@ -349,7 +349,7 @@ class TestSentenceQuality:
         is_valid, score = nlp.check_sentence_quality(sentence, keywords, 'en')
 
         # Should be invalid (no keywords)
-        assert is_valid == False
+        assert is_valid is False
         assert score == 0.0
 
     def test_quality_reasonable_length(self, nlp):
@@ -367,7 +367,7 @@ class TestSentenceQuality:
         is_valid, score = nlp.check_sentence_quality(sentence, keywords, 'en')
 
         # Length 12 is in optimal range (10-50)
-        assert is_valid == True
+        assert is_valid is True
         assert score >= 0.6  # Should get length bonus
 
     def test_quality_header_penalty(self, nlp):
@@ -410,7 +410,7 @@ class TestSentenceQuality:
         is_valid, score = nlp.check_sentence_quality(sentence, keywords, 'en')
 
         # Sentence contains 'shall' which is a modal verb
-        assert is_valid == True
+        assert is_valid is True
         assert score > 0.5  # Should get modal verb bonus
 
 

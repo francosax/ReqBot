@@ -1,0 +1,20 @@
+[flake8]
+max-line-length = 127
+max-complexity = 50
+exclude =
+    .venv,
+    venv,
+    __pycache__,
+    .git,
+    *.pyc,
+    .eggs,
+    build,
+    dist
+per-file-ignores =
+    multilingual_nlp.py:F841
+    report_generator.py:F841
+    tests/*:F841
+    __init__.py:F401
+ignore =
+    W503,
+    W504

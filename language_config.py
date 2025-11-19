@@ -20,7 +20,6 @@ import logging
 import os
 import threading
 from typing import Dict, List, Set, Optional
-from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +58,7 @@ class LanguageConfig:
             "priority_medium": ["should", "ought to", "need to", "recommended"],
             "priority_low": ["may", "can", "could", "might"],
             "security_keywords": ["security", "secure", "protection", "authentication",
-                                 "authorization", "encryption", "confidentiality"],
+                                  "authorization", "encryption", "confidentiality"],
             "categories": {
                 "functional": ["function", "capability", "feature", "operation"],
                 "performance": ["performance", "speed", "throughput", "latency", "response"],
@@ -88,7 +87,7 @@ class LanguageConfig:
             "priority_medium": ["devrait", "recommandé"],
             "priority_low": ["peut", "pourra", "pourrait"],
             "security_keywords": ["sécurité", "sûreté", "protection", "authentification",
-                                 "autorisation", "chiffrement", "confidentialité"],
+                                  "autorisation", "chiffrement", "confidentialité"],
             "categories": {
                 "functional": ["fonction", "fonctionnalité", "caractéristique", "opération"],
                 "performance": ["performance", "vitesse", "débit", "latence", "réponse"],
@@ -117,7 +116,7 @@ class LanguageConfig:
             "priority_medium": ["soll", "sollte", "empfohlen"],
             "priority_low": ["kann", "könnte", "darf"],
             "security_keywords": ["sicherheit", "schutz", "authentifizierung",
-                                 "autorisierung", "verschlüsselung", "vertraulichkeit"],
+                                  "autorisierung", "verschlüsselung", "vertraulichkeit"],
             "categories": {
                 "functional": ["funktion", "funktionalität", "merkmal", "betrieb"],
                 "performance": ["leistung", "geschwindigkeit", "durchsatz", "latenz"],
@@ -146,7 +145,7 @@ class LanguageConfig:
             "priority_medium": ["dovrebbe", "raccomandato"],
             "priority_low": ["può", "potrebbe", "potrà"],
             "security_keywords": ["sicurezza", "protezione", "autenticazione",
-                                 "autorizzazione", "crittografia", "riservatezza"],
+                                  "autorizzazione", "crittografia", "riservatezza"],
             "categories": {
                 "functional": ["funzione", "funzionalità", "caratteristica", "operazione"],
                 "performance": ["prestazione", "velocità", "throughput", "latenza"],
@@ -175,7 +174,7 @@ class LanguageConfig:
             "priority_medium": ["debería", "recomendado"],
             "priority_low": ["puede", "podría", "podrá"],
             "security_keywords": ["seguridad", "protección", "autenticación",
-                                 "autorización", "cifrado", "confidencialidad"],
+                                  "autorización", "cifrado", "confidencialidad"],
             "categories": {
                 "functional": ["función", "funcionalidad", "característica", "operación"],
                 "performance": ["rendimiento", "velocidad", "throughput", "latencia"],

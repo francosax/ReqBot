@@ -11,8 +11,8 @@ from enum import Enum as PyEnum
 import logging
 
 from sqlalchemy import (
-    Column, Integer, String, Text, Float, Boolean,
-    DateTime, ForeignKey, JSON, Index, UniqueConstraint, Enum
+    Integer, String, Text, Float, Boolean, DateTime,
+    ForeignKey, JSON, Index, UniqueConstraint, Enum
 )
 from sqlalchemy.orm import DeclarativeBase, relationship, Mapped, mapped_column
 from sqlalchemy.sql import func
@@ -63,7 +63,6 @@ class ChangeType(str, PyEnum):
 
 class Base(DeclarativeBase):
     """Base class for all database models."""
-    pass
 
 
 # ============================================================================
@@ -104,8 +103,10 @@ class Project(Base):
 
     # Relationships
     documents: Mapped[List["Document"]] = relationship("Document", back_populates="project", cascade="all, delete-orphan")
-    requirements: Mapped[List["Requirement"]] = relationship("Requirement", back_populates="project", cascade="all, delete-orphan")
-    processing_sessions: Mapped[List["ProcessingSession"]] = relationship("ProcessingSession", back_populates="project", cascade="all, delete-orphan")
+    requirements: Mapped[List["Requirement"]] = relationship(
+        "Requirement", back_populates="project", cascade="all, delete-orphan")
+    processing_sessions: Mapped[List["ProcessingSession"]] = relationship(
+        "ProcessingSession", back_populates="project", cascade="all, delete-orphan")
 
     # Indexes
     __table_args__ = (
@@ -160,7 +161,8 @@ class Document(Base):
 
     # Relationships
     project: Mapped["Project"] = relationship("Project", back_populates="documents")
-    requirements: Mapped[List["Requirement"]] = relationship("Requirement", back_populates="document", cascade="all, delete-orphan")
+    requirements: Mapped[List["Requirement"]] = relationship(
+        "Requirement", back_populates="document", cascade="all, delete-orphan")
 
     # Constraints and Indexes
     __table_args__ = (
@@ -223,7 +225,8 @@ class Requirement(Base):
     # Version Control
     version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
     is_current: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
-    parent_requirement_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey('requirements.id', ondelete='SET NULL'), nullable=True)
+    parent_requirement_id: Mapped[Optional[int]] = mapped_column(
+        Integer, ForeignKey('requirements.id', ondelete='SET NULL'), nullable=True)
 
     # User Modifications
     is_manually_edited: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
@@ -235,8 +238,10 @@ class Requirement(Base):
     # Relationships
     document: Mapped["Document"] = relationship("Document", back_populates="requirements")
     project: Mapped["Project"] = relationship("Project", back_populates="requirements")
-    parent_requirement: Mapped[Optional["Requirement"]] = relationship("Requirement", remote_side=[id], backref="child_requirements")
-    history: Mapped[List["RequirementHistory"]] = relationship("RequirementHistory", back_populates="requirement", cascade="all, delete-orphan")
+    parent_requirement: Mapped[Optional["Requirement"]] = relationship(
+        "Requirement", remote_side=[id], backref="child_requirements")
+    history: Mapped[List["RequirementHistory"]] = relationship(
+        "RequirementHistory", back_populates="requirement", cascade="all, delete-orphan")
 
     # Indexes
     __table_args__ = (

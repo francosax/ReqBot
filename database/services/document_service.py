@@ -80,7 +80,7 @@ class DocumentService:
             file_size = None
             try:
                 file_size = Path(file_path).stat().st_size
-            except:
+            except Exception:
                 pass
 
             doc = Document(
@@ -161,7 +161,7 @@ class DocumentService:
                     # Update file size
                     try:
                         existing_doc.file_size_bytes = Path(file_path).stat().st_size
-                    except:
+                    except Exception:
                         pass
 
                     session.flush()

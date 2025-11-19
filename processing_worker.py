@@ -1,8 +1,7 @@
 import os
 import logging
 from datetime import datetime
-from PySide6.QtCore import QObject, Signal, QThread
-import pandas as pd
+from PySide6.QtCore import QObject, Signal
 
 # Assuming these are your core logic functions
 from RB_coordinator import requirement_bot
@@ -10,19 +9,27 @@ from config_RB import load_keyword_config
 from get_all_files import get_all
 from report_generator import create_processing_report
 
-# v3.0: Database services
-from database.services.project_service import ProjectService
-from database.services.session_service import ProcessingSessionService
+# v3.0: Database services - Optional dependency
+try:
+    from database.services.project_service import ProjectService
+    from database.services.session_service import ProcessingSessionService
+    DATABASE_AVAILABLE = True
+except ImportError:
+    DATABASE_AVAILABLE = False
+    ProjectService = None
+    ProcessingSessionService = None
 
 # Set up logging for the worker
 worker_logger = logging.getLogger(__name__)
 
+
 class ProcessingWorker(QObject):
     # Signals to communicate with the GUI thread
     progress_updated = Signal(int)
+    progress_detail_updated = Signal(str)  # v2.3: Detailed progress message (file, step)
     log_message = Signal(str, str)  # Message, Level (e.g., "info", "error")
-    finished = Signal(str) # Message on successful completion
-    error_occurred = Signal(str, str) # Error message, title for MessageBox
+    finished = Signal(str)  # Message on successful completion
+    error_occurred = Signal(str, str)  # Error message, title for MessageBox
 
     def __init__(self, folder_input, folder_output, CM_file, confidence_threshold=0.5, keywords=None):
         super().__init__()
@@ -40,6 +47,7 @@ class ProcessingWorker(QObject):
         """
         self.log_message.emit("Processing started...", "info")
         self.log_message.emit(f"Confidence threshold: {self._confidence_threshold:.2f}", "info")
+        self.progress_detail_updated.emit("Initializing processing...")  # v2.3: Detailed progress
 
         # Create processing report instance
         report = create_processing_report()
@@ -48,27 +56,28 @@ class ProcessingWorker(QObject):
         # v3.0: Create or retrieve project
         project = None
         processing_session = None
-        try:
-            # Generate project name from input folder
-            project_name = os.path.basename(self._folder_input.rstrip(os.sep))
-            if not project_name:
-                project_name = "ReqBot Project"
+        if DATABASE_AVAILABLE:
+            try:
+                # Generate project name from input folder
+                project_name = os.path.basename(self._folder_input.rstrip(os.sep))
+                if not project_name:
+                    project_name = "ReqBot Project"
 
-            # Get or create project
-            project = ProjectService.get_or_create_project(
-                name=project_name,
-                input_folder_path=self._folder_input,
-                output_folder_path=self._folder_output,
-                compliance_matrix_template=self._CM_file
-            )
+                # Get or create project
+                project = ProjectService.get_or_create_project(
+                    name=project_name,
+                    input_folder_path=self._folder_input,
+                    output_folder_path=self._folder_output,
+                    compliance_matrix_template=self._CM_file
+                )
 
-            if project:
-                self.log_message.emit(f"Project initialized: {project.name} (ID: {project.id})", "info")
-            else:
-                self.log_message.emit("Warning: Could not initialize database project", "warning")
-        except Exception as e:
-            worker_logger.error(f"Failed to initialize project: {str(e)}")
-            self.log_message.emit("Warning: Database project creation failed, continuing without persistence", "warning")
+                if project:
+                    self.log_message.emit(f"Project initialized: {project.name} (ID: {project.id})", "info")
+                else:
+                    self.log_message.emit("Warning: Could not initialize database project", "warning")
+            except Exception as e:
+                worker_logger.error(f"Failed to initialize project: {str(e)}")
+                self.log_message.emit("Warning: Database project creation failed, continuing without persistence", "warning")
 
         try:
             # v2.2: Use provided keywords if available, otherwise load from config
@@ -89,12 +98,16 @@ class ProcessingWorker(QObject):
             if total_files == 0:
                 warning_msg = "No untagged PDF files found in the input folder. Processing finished."
                 self.log_message.emit(warning_msg, "warning")
+                self.progress_detail_updated.emit("No PDF files found")  # v2.3
                 report.add_warning(warning_msg)
                 self.finished.emit("No PDFs found to process.")
                 return
 
+            # v2.3: Emit detail about files found
+            self.progress_detail_updated.emit(f"Found {total_files} PDF file(s) to process")
+
             # v3.0: Create processing session
-            if project:
+            if DATABASE_AVAILABLE and project:
                 try:
                     processing_session = ProcessingSessionService.create_session(
                         project_id=project.id,
@@ -119,7 +132,7 @@ class ProcessingWorker(QObject):
                 self.log_message.emit(f"Log file created at: {log_file_path}", "info")
 
                 for i, file_path in enumerate(filtered_files):
-                    if not self._is_running: # Allow stopping the process
+                    if not self._is_running:  # Allow stopping the process
                         cancel_msg = "Processing cancelled."
                         self.log_message.emit(cancel_msg, "warning")
                         report.add_warning(cancel_msg)
@@ -136,12 +149,17 @@ class ProcessingWorker(QObject):
                     file_warnings = []
                     try:
                         # Step 1: Processing PDF (25% of file progress)
-                        self.log_message.emit(f"[{i+1}/{total_files}] Analyzing PDF: {os.path.basename(file_path)}", "info")
+                        filename = os.path.basename(file_path)
+                        self.log_message.emit(f"[{i+1}/{total_files}] Analyzing PDF: {filename}", "info")
+                        self.progress_detail_updated.emit(f"File {i+1}/{total_files}: Analyzing {filename}...")  # v2.3
                         self.progress_updated.emit(file_base_progress + int(file_progress_range * 0.25))
 
                         # Step 2: Extracting requirements (main processing in requirement_bot)
                         # This includes PDF analysis, Excel writing, BASIL export, and highlighting
                         # v3.0: Pass project to requirement_bot for database persistence
+                        # v2.3: Detailed progress update
+                        extract_msg = f"File {i+1}/{total_files}: Extracting requirements from {filename}..."
+                        self.progress_detail_updated.emit(extract_msg)
                         df = requirement_bot(
                             file_path,
                             self._CM_file,
@@ -153,14 +171,27 @@ class ProcessingWorker(QObject):
 
                         # Step 3: File completed (100% of file progress)
                         self.progress_updated.emit(file_base_progress + file_progress_range)
-                        self.log_message.emit(f"[{i+1}/{total_files}] Completed {os.path.basename(file_path)}. Found {len(df)} requirements.", "info")
+                        # v2.3: Progress update
+                        progress_msg = f"File {i+1}/{total_files}: Completed {filename} ({len(df)} requirements)"
+                        self.progress_detail_updated.emit(progress_msg)
+                        log_msg = (
+                            f"[{i+1}/{total_files}] Completed {os.path.basename(file_path)}. "
+                            f"Found {len(df)} requirements."
+                        )
+                        self.log_message.emit(log_msg, "info")
 
                         # Calculate average confidence for this file
-                        avg_confidence = df['Confidence'].mean() if 'Confidence' in df.columns and len(df) > 0 else 0.0
+                        if 'Confidence' in df.columns and len(df) > 0:
+                            avg_confidence = df['Confidence'].mean()
+                        else:
+                            avg_confidence = 0.0
 
                         # Check for low confidence warnings
                         if avg_confidence < 0.6 and len(df) > 0:
-                            low_conf_msg = f"Low average confidence ({avg_confidence:.2f}) in {os.path.basename(file_path)}"
+                            low_conf_msg = (
+                                f"Low average confidence ({avg_confidence:.2f}) "
+                                f"in {os.path.basename(file_path)}"
+                            )
                             file_warnings.append(low_conf_msg)
                             report.add_warning(low_conf_msg)
 
@@ -172,7 +203,7 @@ class ProcessingWorker(QObject):
 
                         # Still update progress even on error
                         self.progress_updated.emit(file_base_progress + file_progress_range)
-                        continue # Skip this file and continue with the next
+                        continue  # Skip this file and continue with the next
 
                     end_time = datetime.now()
                     execution_time = end_time - start_time
@@ -204,11 +235,8 @@ class ProcessingWorker(QObject):
             report.end_processing()
 
             # v3.0: Complete processing session
-            if processing_session:
+            if DATABASE_AVAILABLE and processing_session:
                 try:
-                    # Calculate average confidence across all files
-                    overall_avg_confidence = total_requirements / total_files if total_files > 0 else 0.0
-
                     ProcessingSessionService.complete_session(
                         session_id=processing_session.id,
                         documents_processed=total_files,
@@ -222,6 +250,7 @@ class ProcessingWorker(QObject):
 
             # Generate HTML report
             self.progress_updated.emit(95)
+            self.progress_detail_updated.emit("Generating processing report...")  # v2.3
             self.log_message.emit("Generating processing report...", "info")
             report_date = datetime.now().strftime("%Y.%m.%d_%H%M%S")
             report_path = os.path.join(self._folder_output, f"{report_date}_Processing_Report.html")
@@ -230,7 +259,7 @@ class ProcessingWorker(QObject):
                 self.log_message.emit(f"HTML report generated: {report_path}", "info")
 
                 # v3.0: Update session with report path
-                if processing_session:
+                if DATABASE_AVAILABLE and processing_session:
                     try:
                         proc_session = ProcessingSessionService.get_session_by_id(processing_session.id)
                         if proc_session:
@@ -252,8 +281,8 @@ class ProcessingWorker(QObject):
             worker_logger.exception("An unexpected error occurred during processing.")
             self.error_occurred.emit(f"An unexpected error occurred: {e}", "Application Error")
         finally:
-            self.progress_updated.emit(0) # Reset progress bar
-            self._is_running = False # Ensure worker state is reset
+            self.progress_updated.emit(0)  # Reset progress bar
+            self._is_running = False  # Ensure worker state is reset
 
     def stop(self):
         """Allows gracefully stopping the worker thread."""

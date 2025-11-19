@@ -17,10 +17,8 @@ Date: 2025-11-18
 import pytest
 import json
 import os
-import tempfile
 import threading
 import time
-from pathlib import Path
 from language_config import LanguageConfig, get_language_config
 
 
@@ -381,7 +379,7 @@ class TestThreadSafety:
 
     def test_concurrent_access(self):
         """Test concurrent access to singleton."""
-        config = get_language_config()
+        get_language_config()
         results = []
 
         def access_config():

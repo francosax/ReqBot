@@ -16,7 +16,7 @@ import json
 import os
 import logging
 from typing import List, Dict, Set, Optional
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
 
@@ -122,7 +122,7 @@ class KeywordProfilesManager:
             except Exception as e:
                 logger.error(f"Error loading keyword profiles: {e}")
         else:
-            logger.info(f"No custom profiles file found, using defaults only")
+            logger.info("No custom profiles file found, using defaults only")
 
     def _save(self) -> bool:
         """

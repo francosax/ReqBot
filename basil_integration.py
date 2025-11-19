@@ -17,7 +17,7 @@ import json
 import hashlib
 import logging
 from datetime import datetime
-from typing import List, Dict, Any, Tuple
+from typing import Dict, Any, Tuple
 import pandas as pd
 
 logger = logging.getLogger(__name__)

@@ -4,6 +4,7 @@ import logging
 # Phase 1 Improvement: Maximum allowed highlight coverage as percentage of page
 MAX_HIGHLIGHT_COVERAGE_PERCENT = 40
 
+
 def highlight_requirements(filepath, requirements_list, note_list, page_list, out_pdf_name):
     # Funzione per trovare tutte le posizioni di una parola in una lista di parole
     def find_all_positions(word, words):
@@ -55,7 +56,7 @@ def highlight_requirements(filepath, requirements_list, note_list, page_list, ou
         words = page.get_text("words")  # Ottieni parole con le loro posizioni
         # print(words)
 
-        positions = [find_all_positions(part, words) for part in sentence_parts]
+        [find_all_positions(part, words) for part in sentence_parts]
         found_sequence = find_consecutive_sequence(words, sentence_parts)
 
         if found_sequence:

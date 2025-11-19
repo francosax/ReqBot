@@ -1,22 +1,19 @@
 import logging
 import os
 import sys
-from datetime import datetime
 
 # --- PySide6 Imports ---
 from PySide6.QtWidgets import (
-    QApplication, QWidget, QPushButton, QLineEdit, QFileDialog,
+    QApplication, QWidget, QPushButton, QFileDialog,
     QMessageBox, QVBoxLayout, QLabel, QProgressBar, QHBoxLayout,
     QGroupBox, QTextEdit, QSizePolicy, QDoubleSpinBox, QSlider,
-    QComboBox  # NEW: For recent paths dropdown
+    QComboBox  # For recent paths dropdown
 )
-from PySide6.QtCore import Qt, QThread # Import QThread
-from PySide6.QtGui import QIcon # For potentially adding icons
-
-
+from PySide6.QtCore import Qt, QThread  # Import QThread for threading
+from PySide6.QtGui import QDragEnterEvent, QDropEvent  # For drag/drop support
 
 # Import the worker class
-from processing_worker import ProcessingWorker # <--- NEW IMPORT
+from processing_worker import ProcessingWorker
 
 # Import version information (single source of truth)
 from version import GUI_VERSION
@@ -27,14 +24,76 @@ from recent_projects import get_recents_manager
 # Import keyword profiles manager (v2.2)
 from keyword_profiles import get_profiles_manager
 
-# Import database initialization (v3.0)
-from database.database import auto_initialize_database
+# Import database initialization (v3.0) - Optional dependency
+try:
+    from database.database import auto_initialize_database
+    DATABASE_AVAILABLE = True
+except ImportError:
+    DATABASE_AVAILABLE = False
+    auto_initialize_database = None
 
 # --- Constants for paths, messages, etc. ---
 CM_TEMPLATE_NAME = 'Compliance_Matrix_Template_rev001.xlsx'
 
+
+class DragDropComboBox(QComboBox):
+    """Custom QComboBox that supports drag & drop for files and folders."""
+
+    def __init__(self, parent=None, accept_files=True, accept_folders=True, file_extension=None):
+        """
+        Initialize drag & drop combo box.
+
+        Args:
+            parent: Parent widget
+            accept_files: Whether to accept file drops
+            accept_folders: Whether to accept folder drops
+            file_extension: Optional file extension filter (e.g., '.xlsx', '.pdf')
+        """
+        super().__init__(parent)
+        self.accept_files = accept_files
+        self.accept_folders = accept_folders
+        self.file_extension = file_extension
+        self.setAcceptDrops(True)
+
+    def dragEnterEvent(self, event: QDragEnterEvent):
+        """Handle drag enter event - validate if we can accept the drag."""
+        if event.mimeData().hasUrls():
+            # Check if any URL is acceptable
+            for url in event.mimeData().urls():
+                path = url.toLocalFile()
+                if os.path.isfile(path) and self.accept_files:
+                    # Check file extension if specified
+                    if self.file_extension is None or path.endswith(self.file_extension):
+                        event.acceptProposedAction()
+                        return
+                elif os.path.isdir(path) and self.accept_folders:
+                    event.acceptProposedAction()
+                    return
+        event.ignore()
+
+    def dropEvent(self, event: QDropEvent):
+        """Handle drop event - populate combo box with dropped path."""
+        if event.mimeData().hasUrls():
+            for url in event.mimeData().urls():
+                path = url.toLocalFile()
+                # Validate the dropped path
+                if os.path.isfile(path) and self.accept_files:
+                    if self.file_extension is None or path.endswith(self.file_extension):
+                        normalized_path = os.path.normpath(path)
+                        self.setEditText(normalized_path)
+                        event.acceptProposedAction()
+                        return
+                elif os.path.isdir(path) and self.accept_folders:
+                    normalized_path = os.path.normpath(path)
+                    self.setEditText(normalized_path)
+                    event.acceptProposedAction()
+                    return
+        event.ignore()
+
+
 class QTextEditLogger(logging.Handler):
     """Custom logging handler to send log messages to a QTextEdit."""
+
     def __init__(self, parent_text_edit):
         super().__init__()
         self.widget = parent_text_edit
@@ -51,14 +110,14 @@ class QTextEditLogger(logging.Handler):
 class RequirementBotApp(QWidget):
     def __init__(self):
         super().__init__()
-        self._worker_thread = None # Initialize worker thread as None
-        self._worker = None        # Initialize worker object as None
+        self._worker_thread = None  # Initialize worker thread as None
+        self._worker = None  # Initialize worker object as None
         self.recents_manager = get_recents_manager()  # NEW: Initialize recents manager
         self.profiles_manager = get_profiles_manager()  # v2.2: Initialize profiles manager
-        self.init_logging() # Setup logging before UI
+        self.init_logging()  # Setup logging before UI
         self.init_database()  # v3.0: Initialize database backend
         self.init_ui()
-        self._apply_stylesheet() # Apply stylesheet after UI is initialized
+        self._apply_stylesheet()  # Apply stylesheet after UI is initialized
         self._load_recent_paths()  # NEW: Load recent paths into dropdowns
 
     def init_logging(self):
@@ -66,13 +125,18 @@ class RequirementBotApp(QWidget):
         logging.basicConfig(level=logging.INFO,
                             format='%(asctime)s - %(levelname)s - %(message)s',
                             handlers=[
-                                logging.FileHandler('application_gui.log'), # Log to a file
-                                logging.StreamHandler(sys.stdout)          # Log to console
+                                logging.FileHandler('application_gui.log'),  # Log to a file
+                                logging.StreamHandler(sys.stdout)  # Log to console
                             ])
         self.logger = logging.getLogger(__name__)
 
     def init_database(self):
         """Initialize the database backend (v3.0)."""
+        if not DATABASE_AVAILABLE:
+            self.logger.info("Database backend not available (SQLAlchemy not installed)")
+            self.logger.info("Application will run without database persistence")
+            return
+
         try:
             auto_initialize_database()
             self.logger.info("Database backend initialized successfully")
@@ -84,7 +148,7 @@ class RequirementBotApp(QWidget):
 
     def init_ui(self):
         self.setWindowTitle(f'RequirementBot {GUI_VERSION}')
-        self.resize(800, 600) # Set a more appropriate initial size for the expanded UI
+        self.resize(800, 600)  # Set a more appropriate initial size for the expanded UI
 
         # --- Main Layout ---
         main_layout = QVBoxLayout(self)
@@ -94,14 +158,17 @@ class RequirementBotApp(QWidget):
         input_layout = QVBoxLayout()
 
         self.folderPath_input = self._create_path_selector(
-            input_layout, "Input Folder:", self.get_folder_path_input, "Select Input Folder"
+            input_layout, "Input Folder:", self.get_folder_path_input, "Select Input Folder",
+            accept_files=False, accept_folders=True  # v2.3: Only accept folders
         )
         self.folderPath_output = self._create_path_selector(
-            input_layout, "Output Folder:", self.get_folder_path_output, "Select Output Folder"
+            input_layout, "Output Folder:", self.get_folder_path_output, "Select Output Folder",
+            accept_files=False, accept_folders=True  # v2.3: Only accept folders
         )
         self.CM_path = self._create_path_selector(
             input_layout, "Compliance Matrix:", self.get_compliance_matrix, "Select Compliance Matrix File",
-            file_filter="Excel Files (*.xlsx);;All Files (*)"
+            file_filter="Excel Files (*.xlsx);;All Files (*)",
+            accept_files=True, accept_folders=False, file_extension='.xlsx'  # v2.3: Only accept .xlsx files
         )
 
         input_group_box.setLayout(input_layout)
@@ -114,7 +181,10 @@ class RequirementBotApp(QWidget):
         # Confidence Threshold Control
         confidence_layout = QHBoxLayout()
         confidence_label = QLabel("Minimum Confidence Threshold:")
-        confidence_label.setToolTip("Requirements with confidence scores below this threshold will be filtered out.\nRange: 0.0 (no filtering) to 1.0 (very strict).\nRecommended: 0.4-0.6")
+        confidence_label.setToolTip(
+            "Requirements with confidence scores below this threshold will be filtered out.\n"
+            "Range: 0.0 (no filtering) to 1.0 (very strict).\nRecommended: 0.4-0.6"
+        )
 
         self.confidence_spinbox = QDoubleSpinBox()
         self.confidence_spinbox.setRange(0.0, 1.0)
@@ -173,7 +243,9 @@ class RequirementBotApp(QWidget):
             self.profile_combo.setCurrentIndex(default_index)
 
         self.manage_profiles_btn = QPushButton("Manage Profiles...")
-        self.manage_profiles_btn.setToolTip("Create, edit, or delete custom keyword profiles")
+        self.manage_profiles_btn.setToolTip(
+            "Create, edit, or delete custom keyword profiles"
+        )
         self.manage_profiles_btn.clicked.connect(self.manage_keyword_profiles)
         self.manage_profiles_btn.setMaximumWidth(150)
 
@@ -190,12 +262,12 @@ class RequirementBotApp(QWidget):
         button_layout = QHBoxLayout()
         self.createButton = QPushButton('Start Processing')
         self.createButton.clicked.connect(self.start_processing)
-        self.createButton.setMinimumHeight(50) # Make it taller
+        self.createButton.setMinimumHeight(50)  # Make it taller
         self.createButton.setStyleSheet("background-color: #4CAF50; color: white; font-weight: bold; font-size: 18px;")
 
         self.cancelButton = QPushButton('Cancel Processing')
         self.cancelButton.clicked.connect(self.cancel_processing)
-        self.cancelButton.setEnabled(False) # Disabled initially
+        self.cancelButton.setEnabled(False)  # Disabled initially
         self.cancelButton.setMinimumHeight(50)
         self.cancelButton.setStyleSheet("background-color: #f44336; color: white; font-weight: bold; font-size: 18px;")
 
@@ -203,18 +275,24 @@ class RequirementBotApp(QWidget):
         button_layout.addWidget(self.cancelButton)
         main_layout.addLayout(button_layout)
 
-
         # --- Progress Bar ---
         self.progressBar = QProgressBar(self)
         self.progressBar.setTextVisible(True)
-        self.progressBar.setFormat("Progress: %p%") # Display percentage
+        self.progressBar.setFormat("Progress: %p%")  # Display percentage
         main_layout.addWidget(self.progressBar)
+
+        # v2.3: Progress Details Label
+        self.progress_detail_label = QLabel(self)
+        self.progress_detail_label.setText("Ready to process")
+        self.progress_detail_label.setStyleSheet("color: #666; font-style: italic; padding: 5px;")
+        self.progress_detail_label.setWordWrap(True)
+        main_layout.addWidget(self.progress_detail_label)
 
         # --- Log Display ---
         self.log_display = QTextEdit(self)
         self.log_display.setReadOnly(True)
         self.log_display.setPlaceholderText("Application logs and status messages will appear here...")
-        self.log_display.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding) # Allow it to take available space
+        self.log_display.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)  # Allow it to take available space
         main_layout.addWidget(self.log_display)
 
         # Connect custom logger to QTextEdit
@@ -224,27 +302,38 @@ class RequirementBotApp(QWidget):
         logging.getLogger('processing_worker').addHandler(self.log_handler)
 
         self.setLayout(main_layout)
-        self.setMinimumSize(600, 400) # Ensure a reasonable minimum size
+        self.setMinimumSize(600, 400)  # Ensure a reasonable minimum size
 
-    def _create_path_selector(self, parent_layout, label_text, select_func, dialog_title, file_filter="All Files (*.*)"):
+    def _create_path_selector(
+            self, parent_layout, label_text, select_func, dialog_title,
+            file_filter="All Files (*.*)", accept_files=True,
+            accept_folders=True, file_extension=None):
         """
-        Helper to create a QLabel, QComboBox (with recent paths), and Browse/Clear buttons.
+        Helper to create a QLabel, DragDropComboBox and Browse/Clear buttons.
 
-        NEW: Uses QComboBox instead of QLineEdit to show recent paths dropdown.
+        NEW v2.3: Uses DragDropComboBox for drag & drop support.
         """
         h_layout = QHBoxLayout()
         label = QLabel(label_text)
 
-        # NEW: Use QComboBox instead of QLineEdit for recent paths support
-        combo_box = QComboBox(self)
+        # v2.3: Use DragDropComboBox for drag & drop support
+        combo_box = DragDropComboBox(
+            self,
+            accept_files=accept_files,
+            accept_folders=accept_folders,
+            file_extension=file_extension
+        )
         combo_box.setEditable(True)  # Allow typing custom paths
-        combo_box.setInsertPolicy(QComboBox.NoInsert)  # Don't auto-add to list when typing
-        combo_box.lineEdit().setPlaceholderText(f"Select recent or browse for {label_text.lower().replace(':', '')}...")
+        combo_box.setInsertPolicy(QComboBox.NoInsert)  # Don't auto-add to list
+        placeholder = f"Drag & drop or browse for {label_text.lower().replace(':', '')}..."
+        combo_box.lineEdit().setPlaceholderText(placeholder)
         combo_box.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
         browse_button = QPushButton("Browse...")
-        browse_button.clicked.connect(lambda: select_func(combo_box, dialog_title, file_filter))
-        browse_button.setFixedWidth(100) # Fixed width for consistency
+        browse_button.clicked.connect(
+            lambda: select_func(combo_box, dialog_title, file_filter)
+        )
+        browse_button.setFixedWidth(100)  # Fixed width for consistency
 
         clear_button = QPushButton("Clear")
         clear_button.clicked.connect(lambda: combo_box.clearEditText())
@@ -255,7 +344,7 @@ class RequirementBotApp(QWidget):
         h_layout.addWidget(browse_button)
         h_layout.addWidget(clear_button)
         parent_layout.addLayout(h_layout)
-        return combo_box # Return the QComboBox for later access
+        return combo_box  # Return the QComboBox for later access
 
     def _apply_stylesheet(self):
         """Applies a simple, modern stylesheet to the application."""
@@ -329,12 +418,22 @@ class RequirementBotApp(QWidget):
         """
         self.setStyleSheet(stylesheet)
         # Apply specific button styles that override the general QPushButton style
-        self.createButton.setStyleSheet("background-color: #28a745; color: white; font-weight: bold; font-size: 16px;") # Green
-        self.cancelButton.setStyleSheet("background-color: #dc3545; color: white; font-weight: bold; font-size: 16px;") # Red
+        # Green
+        self.createButton.setStyleSheet(
+            "background-color: #28a745; color: white; font-weight: bold; font-size: 16px;"
+        )
+        # Red
+        self.cancelButton.setStyleSheet(
+            "background-color: #dc3545; color: white; font-weight: bold; font-size: 16px;"
+        )
         # Re-apply default browse button style as it's part of the template
         for widget in self.findChildren(QPushButton):
             if "Browse" in widget.text() or "Clear" in widget.text():
-                widget.setStyleSheet("background-color: #6c757d; color: white; border: none; padding: 5px 10px; border-radius: 4px;") # Greyish
+                # Greyish
+                widget.setStyleSheet(
+                    "background-color: #6c757d; color: white; border: none; "
+                    "padding: 5px 10px; border-radius: 4px;"
+                )
 
     def get_folder_path_input(self, combo_box, dialog_title, file_filter):
         """
@@ -395,8 +494,8 @@ class RequirementBotApp(QWidget):
 
         # Log loaded recents
         self.logger.info(f"Loaded {len(recent_inputs)} recent input folders, "
-                        f"{len(recent_outputs)} recent output folders, "
-                        f"{len(recent_cms)} recent CM files")
+                         f"{len(recent_outputs)} recent output folders, "
+                         f"{len(recent_cms)} recent CM files")
 
     def _validate_inputs(self):
         """
@@ -424,8 +523,10 @@ class RequirementBotApp(QWidget):
             return False
 
         if CM_TEMPLATE_NAME not in CM_file:
-            QMessageBox.information(self, 'Error Message',
-                                    f'The chosen file is not the correct Compliance Matrix Template (expected "{CM_TEMPLATE_NAME}"). Please select the correct file.')
+            msg = ('The chosen file is not the correct Compliance Matrix '
+                   f'Template (expected "{CM_TEMPLATE_NAME}"). '
+                   'Please select the correct file.')
+            QMessageBox.information(self, 'Error Message', msg)
             self.logger.error(f"Incorrect CM template selected: {CM_file}")
             return False
         return True
@@ -435,11 +536,9 @@ class RequirementBotApp(QWidget):
 
         # CRITICAL FIX: Prevent multiple simultaneous processing
         if self._worker_thread and self._worker_thread.isRunning():
-            QMessageBox.warning(
-                self,
-                "Processing In Progress",
-                "A processing task is already running. Please wait for it to complete or use the Cancel button."
-            )
+            msg = ("A processing task is already running. "
+                   "Please wait for it to complete or use the Cancel button.")
+            QMessageBox.warning(self, "Processing In Progress", msg)
             self.logger.warning("Attempted to start processing while already running")
             return
 
@@ -455,7 +554,7 @@ class RequirementBotApp(QWidget):
 
         # Disable UI elements during processing
         self._set_ui_enabled(False)
-        self.log_display.clear() # Clear previous logs
+        self.log_display.clear()  # Clear previous logs
         self.progressBar.setValue(0)
         self.logger.info("Validation successful. Starting processing...")
 
@@ -490,26 +589,28 @@ class RequirementBotApp(QWidget):
 
         # Connect signals from worker to GUI slots
         self._worker.progress_updated.connect(self.progressBar.setValue)
+        self._worker.progress_detail_updated.connect(
+            self.update_progress_detail
+        )  # v2.3: Detailed progress
         self._worker.log_message.connect(self.handle_log_message)
         self._worker.finished.connect(self.on_processing_finished)
         self._worker.error_occurred.connect(self.on_processing_error)
 
         # Connect thread signals
-        self._worker_thread.started.connect(self._worker.run) # Start worker's run method when thread starts
-        self._worker_thread.finished.connect(self._worker_thread.deleteLater) # Clean up thread object
-        self._worker_thread.finished.connect(self._worker.deleteLater) # Clean up worker object
+        self._worker_thread.started.connect(self._worker.run)
+        self._worker_thread.finished.connect(self._worker_thread.deleteLater)  # Thread cleanup
+        self._worker_thread.finished.connect(self._worker.deleteLater)  # Worker cleanup
 
         # Start the thread
         self._worker_thread.start()
         self.logger.info("Worker thread started.")
 
-
     def cancel_processing(self):
         """Sends a signal to the worker to stop processing."""
         if self._worker and self._worker_thread and self._worker_thread.isRunning():
             self._worker.stop()
-            self._worker_thread.quit() # Request the thread to quit
-            self._worker_thread.wait() # Wait for the thread to finish
+            self._worker_thread.quit()  # Request the thread to quit
+            self._worker_thread.wait()  # Wait for the thread to finish
 
             # Clean up references to allow garbage collection
             self._worker_thread = None
@@ -517,8 +618,9 @@ class RequirementBotApp(QWidget):
 
             self.logger.warning("Processing cancelled by user.")
             QMessageBox.information(self, "Processing Cancelled", "The processing has been stopped.")
-            self._set_ui_enabled(True) # Re-enable UI
-            self.progressBar.setValue(0) # Reset progress
+            self._set_ui_enabled(True)  # Re-enable UI
+            self.progressBar.setValue(0)  # Reset progress
+            self.progress_detail_label.setText("Ready to process")  # v2.3: Reset detail label
             self.log_display.append("<span style='color: orange;'>Processing cancelled by user.</span>")
 
     def _set_ui_enabled(self, enabled):
@@ -532,10 +634,19 @@ class RequirementBotApp(QWidget):
             if "Browse" in button.text() or "Clear" in button.text():
                 button.setEnabled(enabled)
         self.createButton.setEnabled(enabled)
-        self.cancelButton.setEnabled(not enabled) # Cancel button is enabled when processing, disabled otherwise
-
+        # Cancel button is enabled when processing, disabled otherwise
+        self.cancelButton.setEnabled(not enabled)
 
     # --- Slots for Worker Signals ---
+    def update_progress_detail(self, detail_message):
+        """
+        v2.3: Update the progress detail label with current file and step.
+
+        Args:
+            detail_message: Detailed progress message (e.g., "File 1/3: Analyzing document.pdf...")
+        """
+        self.progress_detail_label.setText(detail_message)
+
     def handle_log_message(self, message, level):
         """Receives log messages from worker and displays them in QTextEdit."""
         color = "black"
@@ -561,10 +672,10 @@ class RequirementBotApp(QWidget):
         self._worker = None
 
         QMessageBox.information(self, 'Processing Completed', message)
-        self._set_ui_enabled(True) # Re-enable UI
-        self.progressBar.setValue(0) # Reset progress
+        self._set_ui_enabled(True)  # Re-enable UI
+        self.progressBar.setValue(0)  # Reset progress
+        self.progress_detail_label.setText("Ready to process")  # v2.3: Reset detail label
         self.log_display.append("<span style='color: green;'>Processing completed successfully!</span>")
-
 
     def on_processing_error(self, error_message, title):
         """Called when worker encounters a critical error."""
@@ -580,14 +691,16 @@ class RequirementBotApp(QWidget):
         self._worker = None
 
         QMessageBox.critical(self, title, error_message)
-        self._set_ui_enabled(True) # Re-enable UI
-        self.progressBar.setValue(0) # Reset progress
+        self._set_ui_enabled(True)  # Re-enable UI
+        self.progressBar.setValue(0)  # Reset progress
+        self.progress_detail_label.setText("Ready to process")  # v2.3: Reset detail label
         self.log_display.append(f"<span style='color: red;'>Error: {error_message}</span>")
-
 
     def manage_keyword_profiles(self):
         """v2.2: Open dialog to manage keyword profiles."""
-        from PySide6.QtWidgets import QDialog, QListWidget, QTextEdit, QDialogButtonBox, QInputDialog
+        from PySide6.QtWidgets import (
+            QDialog, QListWidget, QTextEdit, QDialogButtonBox
+        )
 
         dialog = QDialog(self)
         dialog.setWindowTitle("Manage Keyword Profiles")
@@ -664,7 +777,6 @@ class RequirementBotApp(QWidget):
         if index >= 0:
             self.profile_combo.setCurrentIndex(index)
 
-
     def _create_new_profile(self, parent_dialog, profile_list):
         """Helper to create a new keyword profile."""
         from PySide6.QtWidgets import QInputDialog
@@ -710,7 +822,6 @@ class RequirementBotApp(QWidget):
         else:
             QMessageBox.warning(parent_dialog, "Error", f"Failed to create profile '{name}'.")
 
-
     def _delete_selected_profile(self, profile_list):
         """Helper to delete selected profile."""
         selected_items = profile_list.selectedItems()
@@ -746,7 +857,6 @@ class RequirementBotApp(QWidget):
             else:
                 QMessageBox.warning(self, "Error", f"Failed to delete profile '{name}'.")
 
-
     def closeEvent(self, event):
         """Custom close event handling."""
         if self._worker_thread and self._worker_thread.isRunning():
@@ -754,7 +864,7 @@ class RequirementBotApp(QWidget):
                                          'Processing is still running. Do you want to cancel and exit?',
                                          QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
             if reply == QMessageBox.StandardButton.Yes:
-                self.cancel_processing() # Attempt to cancel first
+                self.cancel_processing()  # Attempt to cancel first
                 event.accept()
             else:
                 event.ignore()
