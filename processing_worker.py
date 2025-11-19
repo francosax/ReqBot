@@ -20,6 +20,7 @@ worker_logger = logging.getLogger(__name__)
 class ProcessingWorker(QObject):
     # Signals to communicate with the GUI thread
     progress_updated = Signal(int)
+    progress_detail_updated = Signal(str)  # v2.3: Detailed progress message (file, step)
     log_message = Signal(str, str)  # Message, Level (e.g., "info", "error")
     finished = Signal(str) # Message on successful completion
     error_occurred = Signal(str, str) # Error message, title for MessageBox
@@ -40,6 +41,7 @@ class ProcessingWorker(QObject):
         """
         self.log_message.emit("Processing started...", "info")
         self.log_message.emit(f"Confidence threshold: {self._confidence_threshold:.2f}", "info")
+        self.progress_detail_updated.emit("Initializing processing...")  # v2.3: Detailed progress
 
         # Create processing report instance
         report = create_processing_report()
@@ -89,9 +91,13 @@ class ProcessingWorker(QObject):
             if total_files == 0:
                 warning_msg = "No untagged PDF files found in the input folder. Processing finished."
                 self.log_message.emit(warning_msg, "warning")
+                self.progress_detail_updated.emit("No PDF files found")  # v2.3
                 report.add_warning(warning_msg)
                 self.finished.emit("No PDFs found to process.")
                 return
+
+            # v2.3: Emit detail about files found
+            self.progress_detail_updated.emit(f"Found {total_files} PDF file(s) to process")
 
             # v3.0: Create processing session
             if project:
@@ -136,12 +142,15 @@ class ProcessingWorker(QObject):
                     file_warnings = []
                     try:
                         # Step 1: Processing PDF (25% of file progress)
-                        self.log_message.emit(f"[{i+1}/{total_files}] Analyzing PDF: {os.path.basename(file_path)}", "info")
+                        filename = os.path.basename(file_path)
+                        self.log_message.emit(f"[{i+1}/{total_files}] Analyzing PDF: {filename}", "info")
+                        self.progress_detail_updated.emit(f"File {i+1}/{total_files}: Analyzing {filename}...")  # v2.3
                         self.progress_updated.emit(file_base_progress + int(file_progress_range * 0.25))
 
                         # Step 2: Extracting requirements (main processing in requirement_bot)
                         # This includes PDF analysis, Excel writing, BASIL export, and highlighting
                         # v3.0: Pass project to requirement_bot for database persistence
+                        self.progress_detail_updated.emit(f"File {i+1}/{total_files}: Extracting requirements from {filename}...")  # v2.3
                         df = requirement_bot(
                             file_path,
                             self._CM_file,
@@ -153,6 +162,7 @@ class ProcessingWorker(QObject):
 
                         # Step 3: File completed (100% of file progress)
                         self.progress_updated.emit(file_base_progress + file_progress_range)
+                        self.progress_detail_updated.emit(f"File {i+1}/{total_files}: Completed {filename} ({len(df)} requirements)")  # v2.3
                         self.log_message.emit(f"[{i+1}/{total_files}] Completed {os.path.basename(file_path)}. Found {len(df)} requirements.", "info")
 
                         # Calculate average confidence for this file
@@ -222,6 +232,7 @@ class ProcessingWorker(QObject):
 
             # Generate HTML report
             self.progress_updated.emit(95)
+            self.progress_detail_updated.emit("Generating processing report...")  # v2.3
             self.log_message.emit("Generating processing report...", "info")
             report_date = datetime.now().strftime("%Y.%m.%d_%H%M%S")
             report_path = os.path.join(self._folder_output, f"{report_date}_Processing_Report.html")
