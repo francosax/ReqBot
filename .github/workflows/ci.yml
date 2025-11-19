@@ -65,9 +65,11 @@ jobs:
         pytest tests/test_gui.py -v --cov=main_app --cov-report=xml --cov-report=term
 
     - name: Run integration tests
+      env:
+        QT_QPA_PLATFORM: offscreen
       run: |
-        python tests/test_integration_dragdrop.py
-        python tests/test_integration_progress_details.py
+        pytest tests/test_integration_dragdrop.py -v
+        pytest tests/test_integration_progress_details.py -v
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
