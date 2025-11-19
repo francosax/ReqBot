@@ -62,6 +62,7 @@ def gui(app, qtbot):
         print(f"Warning: Cleanup error in test fixture: {e}")
 
 
+@pytest.mark.smoke
 def test_initial_state(gui):
     # NEW: Use currentText() for QComboBox widgets
     assert gui.folderPath_input.currentText() == ""
@@ -112,6 +113,7 @@ def test_cm_file_field(gui, qtbot, monkeypatch):
     assert gui.CM_path.currentText() == os.path.normpath(test_file)
 
 
+@pytest.mark.smoke
 def test_progress_bar_updates(gui):
     # Test that the progress bar can be updated
     # In the actual app, this is done via signals from the worker
@@ -181,6 +183,7 @@ def temp_pdf_file():
     os.remove(tmpfile_path)
 
 
+@pytest.mark.smoke
 def test_dragdrop_combo_accepts_folders(app, qtbot, temp_folder):
     """Test DragDropComboBox accepts folder drops when configured."""
     combo = DragDropComboBox(accept_files=False, accept_folders=True)
@@ -431,6 +434,7 @@ def test_gui_cm_path_accepts_xlsx_drag_drop(gui, qtbot, temp_xlsx_file):
 # Progress Details Tests (v2.3.0)
 # ========================================
 
+@pytest.mark.smoke
 def test_progress_detail_label_exists(gui):
     """Test that progress detail label exists in GUI."""
     assert hasattr(gui, 'progress_detail_label')
