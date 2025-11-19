@@ -10,8 +10,8 @@ from PySide6.QtWidgets import (
     QGroupBox, QTextEdit, QSizePolicy, QDoubleSpinBox, QSlider,
     QComboBox  # NEW: For recent paths dropdown
 )
-from PySide6.QtCore import Qt, QThread # Import QThread
-from PySide6.QtGui import QIcon # For potentially adding icons
+from PySide6.QtCore import Qt, QThread, QUrl # Import QThread and QUrl for drag/drop
+from PySide6.QtGui import QIcon, QDragEnterEvent, QDropEvent # For drag/drop support
 
 
 
@@ -32,6 +32,62 @@ from database.database import auto_initialize_database
 
 # --- Constants for paths, messages, etc. ---
 CM_TEMPLATE_NAME = 'Compliance_Matrix_Template_rev001.xlsx'
+
+
+class DragDropComboBox(QComboBox):
+    """Custom QComboBox that supports drag & drop for files and folders."""
+
+    def __init__(self, parent=None, accept_files=True, accept_folders=True, file_extension=None):
+        """
+        Initialize drag & drop combo box.
+
+        Args:
+            parent: Parent widget
+            accept_files: Whether to accept file drops
+            accept_folders: Whether to accept folder drops
+            file_extension: Optional file extension filter (e.g., '.xlsx', '.pdf')
+        """
+        super().__init__(parent)
+        self.accept_files = accept_files
+        self.accept_folders = accept_folders
+        self.file_extension = file_extension
+        self.setAcceptDrops(True)
+
+    def dragEnterEvent(self, event: QDragEnterEvent):
+        """Handle drag enter event - validate if we can accept the drag."""
+        if event.mimeData().hasUrls():
+            # Check if any URL is acceptable
+            for url in event.mimeData().urls():
+                path = url.toLocalFile()
+                if os.path.isfile(path) and self.accept_files:
+                    # Check file extension if specified
+                    if self.file_extension is None or path.endswith(self.file_extension):
+                        event.acceptProposedAction()
+                        return
+                elif os.path.isdir(path) and self.accept_folders:
+                    event.acceptProposedAction()
+                    return
+        event.ignore()
+
+    def dropEvent(self, event: QDropEvent):
+        """Handle drop event - populate combo box with dropped path."""
+        if event.mimeData().hasUrls():
+            for url in event.mimeData().urls():
+                path = url.toLocalFile()
+                # Validate the dropped path
+                if os.path.isfile(path) and self.accept_files:
+                    if self.file_extension is None or path.endswith(self.file_extension):
+                        normalized_path = os.path.normpath(path)
+                        self.setEditText(normalized_path)
+                        event.acceptProposedAction()
+                        return
+                elif os.path.isdir(path) and self.accept_folders:
+                    normalized_path = os.path.normpath(path)
+                    self.setEditText(normalized_path)
+                    event.acceptProposedAction()
+                    return
+        event.ignore()
+
 
 class QTextEditLogger(logging.Handler):
     """Custom logging handler to send log messages to a QTextEdit."""
@@ -94,14 +150,17 @@ class RequirementBotApp(QWidget):
         input_layout = QVBoxLayout()
 
         self.folderPath_input = self._create_path_selector(
-            input_layout, "Input Folder:", self.get_folder_path_input, "Select Input Folder"
+            input_layout, "Input Folder:", self.get_folder_path_input, "Select Input Folder",
+            accept_files=False, accept_folders=True  # v2.3: Only accept folders
         )
         self.folderPath_output = self._create_path_selector(
-            input_layout, "Output Folder:", self.get_folder_path_output, "Select Output Folder"
+            input_layout, "Output Folder:", self.get_folder_path_output, "Select Output Folder",
+            accept_files=False, accept_folders=True  # v2.3: Only accept folders
         )
         self.CM_path = self._create_path_selector(
             input_layout, "Compliance Matrix:", self.get_compliance_matrix, "Select Compliance Matrix File",
-            file_filter="Excel Files (*.xlsx);;All Files (*)"
+            file_filter="Excel Files (*.xlsx);;All Files (*)",
+            accept_files=True, accept_folders=False, file_extension='.xlsx'  # v2.3: Only accept .xlsx files
         )
 
         input_group_box.setLayout(input_layout)
@@ -210,6 +269,13 @@ class RequirementBotApp(QWidget):
         self.progressBar.setFormat("Progress: %p%") # Display percentage
         main_layout.addWidget(self.progressBar)
 
+        # v2.3: Progress Details Label
+        self.progress_detail_label = QLabel(self)
+        self.progress_detail_label.setText("Ready to process")
+        self.progress_detail_label.setStyleSheet("color: #666; font-style: italic; padding: 5px;")
+        self.progress_detail_label.setWordWrap(True)
+        main_layout.addWidget(self.progress_detail_label)
+
         # --- Log Display ---
         self.log_display = QTextEdit(self)
         self.log_display.setReadOnly(True)
@@ -226,20 +292,25 @@ class RequirementBotApp(QWidget):
         self.setLayout(main_layout)
         self.setMinimumSize(600, 400) # Ensure a reasonable minimum size
 
-    def _create_path_selector(self, parent_layout, label_text, select_func, dialog_title, file_filter="All Files (*.*)"):
+    def _create_path_selector(self, parent_layout, label_text, select_func, dialog_title, file_filter="All Files (*.*)", accept_files=True, accept_folders=True, file_extension=None):
         """
-        Helper to create a QLabel, QComboBox (with recent paths), and Browse/Clear buttons.
+        Helper to create a QLabel, DragDropComboBox (with recent paths and drag & drop), and Browse/Clear buttons.
 
-        NEW: Uses QComboBox instead of QLineEdit to show recent paths dropdown.
+        NEW v2.3: Uses DragDropComboBox for drag & drop support.
         """
         h_layout = QHBoxLayout()
         label = QLabel(label_text)
 
-        # NEW: Use QComboBox instead of QLineEdit for recent paths support
-        combo_box = QComboBox(self)
+        # v2.3: Use DragDropComboBox for drag & drop support
+        combo_box = DragDropComboBox(
+            self,
+            accept_files=accept_files,
+            accept_folders=accept_folders,
+            file_extension=file_extension
+        )
         combo_box.setEditable(True)  # Allow typing custom paths
         combo_box.setInsertPolicy(QComboBox.NoInsert)  # Don't auto-add to list when typing
-        combo_box.lineEdit().setPlaceholderText(f"Select recent or browse for {label_text.lower().replace(':', '')}...")
+        combo_box.lineEdit().setPlaceholderText(f"Drag & drop or browse for {label_text.lower().replace(':', '')}...")
         combo_box.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
         browse_button = QPushButton("Browse...")
@@ -490,6 +561,7 @@ class RequirementBotApp(QWidget):
 
         # Connect signals from worker to GUI slots
         self._worker.progress_updated.connect(self.progressBar.setValue)
+        self._worker.progress_detail_updated.connect(self.update_progress_detail)  # v2.3: Detailed progress
         self._worker.log_message.connect(self.handle_log_message)
         self._worker.finished.connect(self.on_processing_finished)
         self._worker.error_occurred.connect(self.on_processing_error)
@@ -519,6 +591,7 @@ class RequirementBotApp(QWidget):
             QMessageBox.information(self, "Processing Cancelled", "The processing has been stopped.")
             self._set_ui_enabled(True) # Re-enable UI
             self.progressBar.setValue(0) # Reset progress
+            self.progress_detail_label.setText("Ready to process")  # v2.3: Reset detail label
             self.log_display.append("<span style='color: orange;'>Processing cancelled by user.</span>")
 
     def _set_ui_enabled(self, enabled):
@@ -536,6 +609,15 @@ class RequirementBotApp(QWidget):
 
 
     # --- Slots for Worker Signals ---
+    def update_progress_detail(self, detail_message):
+        """
+        v2.3: Update the progress detail label with current file and step.
+
+        Args:
+            detail_message: Detailed progress message (e.g., "File 1/3: Analyzing document.pdf...")
+        """
+        self.progress_detail_label.setText(detail_message)
+
     def handle_log_message(self, message, level):
         """Receives log messages from worker and displays them in QTextEdit."""
         color = "black"
@@ -563,6 +645,7 @@ class RequirementBotApp(QWidget):
         QMessageBox.information(self, 'Processing Completed', message)
         self._set_ui_enabled(True) # Re-enable UI
         self.progressBar.setValue(0) # Reset progress
+        self.progress_detail_label.setText("Ready to process")  # v2.3: Reset detail label
         self.log_display.append("<span style='color: green;'>Processing completed successfully!</span>")
 
 
@@ -582,6 +665,7 @@ class RequirementBotApp(QWidget):
         QMessageBox.critical(self, title, error_message)
         self._set_ui_enabled(True) # Re-enable UI
         self.progressBar.setValue(0) # Reset progress
+        self.progress_detail_label.setText("Ready to process")  # v2.3: Reset detail label
         self.log_display.append(f"<span style='color: red;'>Error: {error_message}</span>")
 
 

@@ -7,10 +7,15 @@ from PySide6.QtCore import Qt  # Import Qt directly from QtCore
 
 # Assuming your main application file is now named RequirementBotApp.py
 # and the class is RequirementBotApp.
-from main_app import RequirementBotApp
+from main_app import RequirementBotApp, DragDropComboBox
 
 # Import version information (single source of truth)
 from version import GUI_VERSION
+
+# For drag & drop testing
+from PySide6.QtCore import QMimeData, QUrl
+from PySide6.QtGui import QDragEnterEvent, QDropEvent
+import tempfile
 
 @pytest.fixture(scope="module")
 def app():
@@ -133,3 +138,344 @@ def test_close_event(gui, qtbot, monkeypatch):
     gui.close()
     # After accepting the close dialog, the window should not be visible
     assert not gui.isVisible()
+
+
+# ========================================
+# Drag & Drop Tests (v2.3.0)
+# ========================================
+
+@pytest.fixture
+def temp_folder():
+    """Create a temporary folder for testing."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        yield tmpdir
+
+
+@pytest.fixture
+def temp_xlsx_file():
+    """Create a temporary .xlsx file for testing."""
+    with tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False) as tmpfile:
+        tmpfile.write(b'test data')
+        tmpfile_path = tmpfile.name
+    yield tmpfile_path
+    os.remove(tmpfile_path)
+
+
+@pytest.fixture
+def temp_pdf_file():
+    """Create a temporary .pdf file for testing."""
+    with tempfile.NamedTemporaryFile(suffix='.pdf', delete=False) as tmpfile:
+        tmpfile.write(b'test pdf data')
+        tmpfile_path = tmpfile.name
+    yield tmpfile_path
+    os.remove(tmpfile_path)
+
+
+def test_dragdrop_combo_accepts_folders(app, qtbot, temp_folder):
+    """Test DragDropComboBox accepts folder drops when configured."""
+    combo = DragDropComboBox(accept_files=False, accept_folders=True)
+    combo.show()
+    qtbot.addWidget(combo)
+
+    # Create mime data with folder URL
+    mime_data = QMimeData()
+    mime_data.setUrls([QUrl.fromLocalFile(temp_folder)])
+
+    # Simulate drag enter event
+    drag_event = QDragEnterEvent(
+        combo.rect().center(),
+        Qt.CopyAction,
+        mime_data,
+        Qt.LeftButton,
+        Qt.NoModifier
+    )
+    combo.dragEnterEvent(drag_event)
+
+    # Event should be accepted
+    assert drag_event.isAccepted()
+
+
+def test_dragdrop_combo_accepts_xlsx_files(app, qtbot, temp_xlsx_file):
+    """Test DragDropComboBox accepts .xlsx file drops when configured."""
+    combo = DragDropComboBox(accept_files=True, accept_folders=False, file_extension='.xlsx')
+    combo.show()
+    qtbot.addWidget(combo)
+
+    # Create mime data with .xlsx file URL
+    mime_data = QMimeData()
+    mime_data.setUrls([QUrl.fromLocalFile(temp_xlsx_file)])
+
+    # Simulate drag enter event
+    drag_event = QDragEnterEvent(
+        combo.rect().center(),
+        Qt.CopyAction,
+        mime_data,
+        Qt.LeftButton,
+        Qt.NoModifier
+    )
+    combo.dragEnterEvent(drag_event)
+
+    # Event should be accepted
+    assert drag_event.isAccepted()
+
+
+def test_dragdrop_combo_rejects_wrong_file_type(app, qtbot, temp_pdf_file):
+    """Test DragDropComboBox rejects file drops with wrong extension."""
+    combo = DragDropComboBox(accept_files=True, accept_folders=False, file_extension='.xlsx')
+    combo.show()
+    qtbot.addWidget(combo)
+
+    # Create mime data with .pdf file URL (should be rejected)
+    mime_data = QMimeData()
+    mime_data.setUrls([QUrl.fromLocalFile(temp_pdf_file)])
+
+    # Simulate drag enter event
+    drag_event = QDragEnterEvent(
+        combo.rect().center(),
+        Qt.CopyAction,
+        mime_data,
+        Qt.LeftButton,
+        Qt.NoModifier
+    )
+    combo.dragEnterEvent(drag_event)
+
+    # Event should be ignored
+    assert not drag_event.isAccepted()
+
+
+def test_dragdrop_combo_rejects_files_when_folders_only(app, qtbot, temp_xlsx_file):
+    """Test DragDropComboBox rejects file drops when only folders accepted."""
+    combo = DragDropComboBox(accept_files=False, accept_folders=True)
+    combo.show()
+    qtbot.addWidget(combo)
+
+    # Create mime data with file URL (should be rejected)
+    mime_data = QMimeData()
+    mime_data.setUrls([QUrl.fromLocalFile(temp_xlsx_file)])
+
+    # Simulate drag enter event
+    drag_event = QDragEnterEvent(
+        combo.rect().center(),
+        Qt.CopyAction,
+        mime_data,
+        Qt.LeftButton,
+        Qt.NoModifier
+    )
+    combo.dragEnterEvent(drag_event)
+
+    # Event should be ignored
+    assert not drag_event.isAccepted()
+
+
+def test_dragdrop_combo_rejects_folders_when_files_only(app, qtbot, temp_folder):
+    """Test DragDropComboBox rejects folder drops when only files accepted."""
+    combo = DragDropComboBox(accept_files=True, accept_folders=False, file_extension='.xlsx')
+    combo.show()
+    qtbot.addWidget(combo)
+
+    # Create mime data with folder URL (should be rejected)
+    mime_data = QMimeData()
+    mime_data.setUrls([QUrl.fromLocalFile(temp_folder)])
+
+    # Simulate drag enter event
+    drag_event = QDragEnterEvent(
+        combo.rect().center(),
+        Qt.CopyAction,
+        mime_data,
+        Qt.LeftButton,
+        Qt.NoModifier
+    )
+    combo.dragEnterEvent(drag_event)
+
+    # Event should be ignored
+    assert not drag_event.isAccepted()
+
+
+def test_dragdrop_combo_populates_on_folder_drop(app, qtbot, temp_folder):
+    """Test DragDropComboBox populates text field on successful folder drop."""
+    combo = DragDropComboBox(accept_files=False, accept_folders=True)
+    combo.setEditable(True)
+    combo.show()
+    qtbot.addWidget(combo)
+
+    # Create mime data with folder URL
+    mime_data = QMimeData()
+    mime_data.setUrls([QUrl.fromLocalFile(temp_folder)])
+
+    # Simulate drop event
+    drop_event = QDropEvent(
+        combo.rect().center(),
+        Qt.CopyAction,
+        mime_data,
+        Qt.LeftButton,
+        Qt.NoModifier
+    )
+    combo.dropEvent(drop_event)
+
+    # Combo box should now contain the dropped path
+    assert combo.currentText() == os.path.normpath(temp_folder)
+    assert drop_event.isAccepted()
+
+
+def test_dragdrop_combo_populates_on_file_drop(app, qtbot, temp_xlsx_file):
+    """Test DragDropComboBox populates text field on successful file drop."""
+    combo = DragDropComboBox(accept_files=True, accept_folders=False, file_extension='.xlsx')
+    combo.setEditable(True)
+    combo.show()
+    qtbot.addWidget(combo)
+
+    # Create mime data with .xlsx file URL
+    mime_data = QMimeData()
+    mime_data.setUrls([QUrl.fromLocalFile(temp_xlsx_file)])
+
+    # Simulate drop event
+    drop_event = QDropEvent(
+        combo.rect().center(),
+        Qt.CopyAction,
+        mime_data,
+        Qt.LeftButton,
+        Qt.NoModifier
+    )
+    combo.dropEvent(drop_event)
+
+    # Combo box should now contain the dropped path
+    assert combo.currentText() == os.path.normpath(temp_xlsx_file)
+    assert drop_event.isAccepted()
+
+
+def test_gui_input_folder_accepts_drag_drop(gui, qtbot, temp_folder):
+    """Test GUI input folder field accepts folder drag & drop."""
+    # Get the input folder combo box
+    input_combo = gui.folderPath_input
+
+    # Verify it's a DragDropComboBox
+    assert isinstance(input_combo, DragDropComboBox)
+
+    # Create mime data with folder URL
+    mime_data = QMimeData()
+    mime_data.setUrls([QUrl.fromLocalFile(temp_folder)])
+
+    # Simulate drag enter
+    drag_event = QDragEnterEvent(
+        input_combo.rect().center(),
+        Qt.CopyAction,
+        mime_data,
+        Qt.LeftButton,
+        Qt.NoModifier
+    )
+    input_combo.dragEnterEvent(drag_event)
+    assert drag_event.isAccepted()
+
+    # Simulate drop
+    drop_event = QDropEvent(
+        input_combo.rect().center(),
+        Qt.CopyAction,
+        mime_data,
+        Qt.LeftButton,
+        Qt.NoModifier
+    )
+    input_combo.dropEvent(drop_event)
+
+    # Verify path was set
+    assert input_combo.currentText() == os.path.normpath(temp_folder)
+
+
+def test_gui_cm_path_accepts_xlsx_drag_drop(gui, qtbot, temp_xlsx_file):
+    """Test GUI compliance matrix field accepts .xlsx file drag & drop."""
+    # Get the CM path combo box
+    cm_combo = gui.CM_path
+
+    # Verify it's a DragDropComboBox
+    assert isinstance(cm_combo, DragDropComboBox)
+
+    # Create mime data with .xlsx file URL
+    mime_data = QMimeData()
+    mime_data.setUrls([QUrl.fromLocalFile(temp_xlsx_file)])
+
+    # Simulate drag enter
+    drag_event = QDragEnterEvent(
+        cm_combo.rect().center(),
+        Qt.CopyAction,
+        mime_data,
+        Qt.LeftButton,
+        Qt.NoModifier
+    )
+    cm_combo.dragEnterEvent(drag_event)
+    assert drag_event.isAccepted()
+
+    # Simulate drop
+    drop_event = QDropEvent(
+        cm_combo.rect().center(),
+        Qt.CopyAction,
+        mime_data,
+        Qt.LeftButton,
+        Qt.NoModifier
+    )
+    cm_combo.dropEvent(drop_event)
+
+    # Verify path was set
+    assert cm_combo.currentText() == os.path.normpath(temp_xlsx_file)
+
+
+# ========================================
+# Progress Details Tests (v2.3.0)
+# ========================================
+
+def test_progress_detail_label_exists(gui):
+    """Test that progress detail label exists in GUI."""
+    assert hasattr(gui, 'progress_detail_label')
+    assert gui.progress_detail_label is not None
+
+
+def test_progress_detail_label_initial_state(gui):
+    """Test progress detail label initial text."""
+    assert gui.progress_detail_label.text() == "Ready to process"
+
+
+def test_update_progress_detail_method(gui):
+    """Test update_progress_detail method updates label."""
+    test_message = "File 1/3: Analyzing document.pdf..."
+    gui.update_progress_detail(test_message)
+    assert gui.progress_detail_label.text() == test_message
+
+
+def test_progress_detail_label_reset_on_completion(gui):
+    """Test progress detail label resets after processing completion."""
+    # Set a custom message
+    gui.update_progress_detail("Processing file...")
+
+    # Simulate processing finished
+    gui.on_processing_finished("Processing completed")
+
+    # Label should be reset
+    assert gui.progress_detail_label.text() == "Ready to process"
+
+
+def test_progress_detail_label_reset_on_error(gui):
+    """Test progress detail label resets after processing error."""
+    # Set a custom message
+    gui.update_progress_detail("Processing file...")
+
+    # Simulate processing error
+    gui.on_processing_error("Test error", "Error")
+
+    # Label should be reset
+    assert gui.progress_detail_label.text() == "Ready to process"
+
+
+def test_progress_detail_label_reset_on_cancel(gui):
+    """Test progress detail label resets after processing cancellation."""
+    # Set a custom message
+    gui.update_progress_detail("Processing file...")
+
+    # Create a mock worker and thread to avoid actual processing
+    from unittest.mock import MagicMock
+    gui._worker = MagicMock()
+    gui._worker_thread = MagicMock()
+    gui._worker_thread.isRunning.return_value = True
+
+    # Simulate cancel
+    gui.cancel_processing()
+
+    # Label should be reset
+    assert gui.progress_detail_label.text() == "Ready to process"
