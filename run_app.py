@@ -1,10 +1,10 @@
 import sys
 import subprocess
-import os
 
 # Define the path to your PySide6 application script
 # Make sure this path is correct relative to run_app.py
 APP_SCRIPT_PATH = "main_app.py"
+
 
 def run_gui_app():
     """
@@ -23,6 +23,7 @@ def run_gui_app():
         print(f"Stdout: {e.stdout.decode()}") if e.stdout else ""
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
+
 
 def run_tests():
     """
@@ -54,7 +55,7 @@ if __name__ == "__main__":
         choice = input("Enter your choice (1, 2, or 3): ")
         if choice == '1':
             run_gui_app()
-            break # Exit after launching GUI
+            break  # Exit after launching GUI
         elif choice == '2':
             run_tests()
             # Don't break here if you want to allow running GUI after tests

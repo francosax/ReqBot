@@ -7,12 +7,14 @@ Tests that BASIL export is properly integrated and generates expected files.
 import os
 import sys
 import tempfile
-import shutil
 from datetime import datetime
 
 # Simple mock DataFrame class (without pandas)
+
+
 class MockDataFrame:
     """Mock DataFrame for testing without pandas dependency."""
+
     def __init__(self, data):
         self.data = data
         self._columns = list(data.keys()) if data else []
@@ -215,9 +217,9 @@ def test_basil_integration():
     print("Test 5: Summary of Workflow Outputs")
     print("-" * 70)
     print("ReqBot workflow now produces 3 files per PDF:")
-    print(f"  1. Excel Compliance Matrix: YYYY.MM.DD_Compliance Matrix_filename.xlsx")
-    print(f"  2. Tagged PDF: YYYY.MM.DD_Tagged_filename.pdf")
-    print(f"  3. BASIL SPDX Export: YYYY.MM.DD_BASIL_Export_filename.jsonld ⭐ NEW")
+    print("  1. Excel Compliance Matrix: YYYY.MM.DD_Compliance Matrix_filename.xlsx")
+    print("  2. Tagged PDF: YYYY.MM.DD_Tagged_filename.pdf")
+    print("  3. BASIL SPDX Export: YYYY.MM.DD_BASIL_Export_filename.jsonld ⭐ NEW")
     print()
 
     # Summary

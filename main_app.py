@@ -93,6 +93,7 @@ class DragDropComboBox(QComboBox):
 
 class QTextEditLogger(logging.Handler):
     """Custom logging handler to send log messages to a QTextEdit."""
+
     def __init__(self, parent_text_edit):
         super().__init__()
         self.widget = parent_text_edit
@@ -522,9 +523,9 @@ class RequirementBotApp(QWidget):
             return False
 
         if CM_TEMPLATE_NAME not in CM_file:
-            msg = (f'The chosen file is not the correct Compliance Matrix '
+            msg = ('The chosen file is not the correct Compliance Matrix '
                    f'Template (expected "{CM_TEMPLATE_NAME}"). '
-                   f'Please select the correct file.')
+                   'Please select the correct file.')
             QMessageBox.information(self, 'Error Message', msg)
             self.logger.error(f"Incorrect CM template selected: {CM_file}")
             return False

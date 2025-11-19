@@ -5,9 +5,6 @@ Tests the HTML report generation functionality including
 statistics calculation, file tracking, warnings, and errors.
 """
 
-import pytest
-import os
-import tempfile
 from datetime import datetime
 from report_generator import ProcessingReport, create_processing_report
 

@@ -38,7 +38,7 @@ def requirement_bot(path_in, cm_path, words_to_find, path_out, confidence_thresh
     filename_path, ext = os.path.splitext(path_in)
     filename = os.path.basename(filename_path)
     # print(filename)
-    #folder_path = os.path.dirname(filename_path)
+    # folder_path = os.path.dirname(filename_path)
 
     # v3.0: Create or get document in database
     document = None

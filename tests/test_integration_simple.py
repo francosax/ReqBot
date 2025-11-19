@@ -4,7 +4,6 @@ Simple integration test to verify BASIL integration in RB_coordinator.
 Does not require pandas - just verifies code structure.
 """
 
-import os
 import sys
 from datetime import datetime
 

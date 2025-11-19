@@ -6,27 +6,20 @@ Tests the complete integration of the database backend with the
 main application components without requiring PySide6 or real PDFs.
 """
 
-import os
 import sys
-import tempfile
-from pathlib import Path
 
 # Test imports
+
+
 def test_imports():
     """Test that all database integration imports work."""
     print("Testing imports...")
 
     # Main app imports
-    from database.database import auto_initialize_database
 
     # Processing worker imports
-    from database.services.project_service import ProjectService
-    from database.services.session_service import ProcessingSessionService
 
     # RB coordinator imports
-    from database.services.document_service import DocumentService
-    from database.services.requirement_service import RequirementService
-    from database.models import Priority, ProcessingStatus
 
     print("✓ All imports successful")
     return True
@@ -117,7 +110,7 @@ def test_document_workflow(project):
 
     assert updated_doc.processing_status == ProcessingStatus.COMPLETED
     assert updated_doc.page_count == 10
-    print(f"✓ Document status updated to COMPLETED")
+    print("✓ Document status updated to COMPLETED")
 
     return document
 
@@ -231,13 +224,13 @@ def test_session_workflow(project):
 
     assert completed_session.documents_processed == 1
     assert completed_session.requirements_extracted == 3
-    print(f"✓ Processing session completed")
+    print("✓ Processing session completed")
 
     # Get session summary
     summary = ProcessingSessionService.get_session_summary(session.id)
     assert summary is not None
     assert summary['results']['requirements_extracted'] == 3
-    print(f"✓ Session summary retrieved")
+    print("✓ Session summary retrieved")
 
     return session
 
@@ -259,12 +252,12 @@ def test_complete_workflow():
     print("\n" + "=" * 60)
     print("✅ All integration tests passed!")
     print("=" * 60)
-    print(f"\nSummary:")
+    print("\nSummary:")
     print(f"  - Project ID: {project.id}")
     print(f"  - Document ID: {document.id}")
     print(f"  - Requirements created: {len(requirements)}")
     print(f"  - Session ID: {session.id}")
-    print(f"\nDatabase backend is fully integrated and functional! 🎉")
+    print("\nDatabase backend is fully integrated and functional! 🎉")
 
     return True
 

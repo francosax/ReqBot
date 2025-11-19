@@ -17,6 +17,7 @@ from PySide6.QtCore import QMimeData, QUrl
 from PySide6.QtGui import QDragEnterEvent, QDropEvent
 import tempfile
 
+
 @pytest.fixture(scope="module")
 def app():
     """Create QApplication instance for tests."""
@@ -24,6 +25,7 @@ def app():
     yield app
     # Cleanup: Process remaining events and deleteLater objects
     app.processEvents()
+
 
 @pytest.fixture
 def gui(app, qtbot):
@@ -59,6 +61,7 @@ def gui(app, qtbot):
         # Log but don't fail test on cleanup errors
         print(f"Warning: Cleanup error in test fixture: {e}")
 
+
 def test_initial_state(gui):
     # NEW: Use currentText() for QComboBox widgets
     assert gui.folderPath_input.currentText() == ""
@@ -68,6 +71,7 @@ def test_initial_state(gui):
     # or 0 when setValue(0) is explicitly called. Accept either value as valid initial state.
     assert gui.progressBar.value() in [-1, 0], f"Expected progressBar value to be -1 or 0, got {gui.progressBar.value()}"
     assert gui.windowTitle() == f"RequirementBot {GUI_VERSION}"
+
 
 def test_input_folder_field(gui, qtbot, monkeypatch):
     test_path = "/tmp/test_input"
@@ -81,6 +85,7 @@ def test_input_folder_field(gui, qtbot, monkeypatch):
     # NEW: Use currentText() for QComboBox widgets
     assert gui.folderPath_input.currentText() == os.path.normpath(test_path)
 
+
 def test_output_folder_field(gui, qtbot, monkeypatch):
     test_path = "/tmp/test_output"
     # Monkeypatch for PySide6's QFileDialog
@@ -92,6 +97,7 @@ def test_output_folder_field(gui, qtbot, monkeypatch):
     # Compare normalized paths (main_app.py uses os.path.normpath)
     # NEW: Use currentText() for QComboBox widgets
     assert gui.folderPath_output.currentText() == os.path.normpath(test_path)
+
 
 def test_cm_file_field(gui, qtbot, monkeypatch):
     test_file = "/tmp/cm.xlsx"
@@ -105,11 +111,13 @@ def test_cm_file_field(gui, qtbot, monkeypatch):
     # NEW: Use currentText() for QComboBox widgets
     assert gui.CM_path.currentText() == os.path.normpath(test_file)
 
+
 def test_progress_bar_updates(gui):
     # Test that the progress bar can be updated
     # In the actual app, this is done via signals from the worker
     gui.progressBar.setValue(42)
     assert gui.progressBar.value() == 42
+
 
 def test_task_finished_shows_messagebox(gui, qtbot, monkeypatch):
     shown = {}
@@ -128,6 +136,8 @@ def test_task_finished_shows_messagebox(gui, qtbot, monkeypatch):
     assert shown.get('called', False)
 
 # You might want to add a test for the closeEvent behavior if it's critical
+
+
 def test_close_event(gui, qtbot, monkeypatch):
     # Mock QMessageBox.question to simulate clicking Yes
     monkeypatch.setattr(

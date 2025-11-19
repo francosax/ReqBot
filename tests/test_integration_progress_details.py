@@ -4,7 +4,6 @@ Integration test for Progress Details functionality (v2.3.0).
 Verifies proper integration of detailed progress updates in processing_worker.py and main_app.py.
 """
 
-import os
 import sys
 
 
@@ -24,7 +23,7 @@ def test_progress_details_integration():
     try:
         with open('processing_worker.py', 'r') as f:
             worker_content = f.read()
-            worker_lines = worker_content.split('\n')
+    # __worker_lines = worker_content.split('\n')
 
         # Check signal definition
         if 'progress_detail_updated = Signal(str)' in worker_content:

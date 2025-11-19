@@ -15,7 +15,7 @@ Features:
 import json
 import os
 import logging
-from typing import List, Dict, Optional
+from typing import List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -61,9 +61,9 @@ class RecentsManager:
                         self.recents['cm_files'] = loaded_data.get('cm_files', [])
                         logger.info(f"Loaded recent paths from {self.config_file}")
                     else:
-                        logger.warning(f"Invalid recents config format, using defaults")
+                        logger.warning("Invalid recents config format, using defaults")
             else:
-                logger.info(f"Recents config file not found, will create on first save")
+                logger.info("Recents config file not found, will create on first save")
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse recents config: {e}. Using defaults.")
         except Exception as e:

@@ -144,7 +144,7 @@ def matches_requirement_pattern(sentence):
     # Common requirement patterns
     REQUIREMENT_PATTERNS = [
         # Modal verb patterns
-        r'\b(shall|must|should|will)\s+(be|have|provide|support|allow|enable|ensure|include|perform|display|accept|reject|generate|calculate|store|retrieve|validate|verify)',
+        r'\b(shall|must|should|will)\s+(be|have|provide|support|allow|enable|ensure|include|perform|display|accept|reject|generate|calculate|store|retrieve|validate|verify)',  # noqa: E501
 
         # Subject-verb patterns with modal verbs
         r'\b(the\s+\w+|this\s+\w+|all\s+\w+|each\s+\w+|every\s+\w+)\s+(shall|must|should|will)\b',
@@ -344,9 +344,9 @@ def requirement_finder(path, keywords_set, filename, confidence_threshold=0.5):
     })
 
     df['Priority'] = df['Description'].apply(lambda x: 'high' if 'must' in x.lower() or 'shall' in x.lower()
-    else 'medium' if 'should' in x.lower() or 'has to' in x.lower()
-    else 'security' if 'security' in x.lower()
-    else 'low')
+                                             else 'medium' if 'should' in x.lower() or 'has to' in x.lower()
+                                             else 'security' if 'security' in x.lower()
+                                             else 'low')
 
     # v2.2: Add automatic categorization
     from requirement_categorizer import get_categorizer

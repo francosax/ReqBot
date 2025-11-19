@@ -4,7 +4,6 @@ Integration test for Drag & Drop functionality in main_app.py (v2.3.0).
 Verifies proper integration of DragDropComboBox in the GUI.
 """
 
-import os
 import sys
 
 
@@ -165,7 +164,7 @@ def test_dragdrop_integration():
             # CM path: only .xlsx files
             if 'self.CM_path = self._create_path_selector' in line:
                 config_lines = '\n'.join(lines[i:i+4])
-                if 'accept_files=True' in config_lines and 'accept_folders=False' in config_lines and "file_extension='.xlsx'" in config_lines:
+                if 'accept_files=True' in config_lines and 'accept_folders=False' in config_lines and "file_extension='.xlsx'" in config_lines:  # noqa: E501
                     cm_file_config = True
                     print(f"✓ CM path accepts only .xlsx files (line {i+1})")
 

@@ -19,8 +19,7 @@ Date: 2025-11-18
 
 import re
 import logging
-from typing import Dict, Tuple, Optional
-from collections import Counter
+from typing import Tuple, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -143,7 +142,7 @@ class LanguageDetector:
         confidence = min(1.0, confidence / 100.0)
 
         logger.info(f"Detected language: {self.SUPPORTED_LANGUAGES[detected_lang]} "
-                   f"({detected_lang}) with confidence {confidence:.2f}")
+                    f"({detected_lang}) with confidence {confidence:.2f}")
         logger.debug(f"Language scores: {scores}")
 
         return (detected_lang, confidence)

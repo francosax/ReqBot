@@ -20,10 +20,7 @@ Date: 2025-11-18
 import pytest
 import threading
 import time
-import tempfile
-import os
-from pathlib import Path
-from language_detector import LanguageDetector, detect_language
+from language_detector import LanguageDetector
 from language_config import LanguageConfig, get_language_config
 
 
@@ -360,9 +357,9 @@ class TestPerformance:
         """Test that configuration access is fast."""
         start_time = time.time()
         for _ in range(1000):
-            keywords = config.get_keywords('en')
-            model = config.get_model_name('en')
-            priority = config.get_priority_keywords('en', 'high')
+            config.get_keywords('en')
+            config.get_model_name('en')
+            config.get_priority_keywords('en', 'high')
         elapsed = time.time() - start_time
 
         # Should complete 1000 accesses in under 1 second
@@ -516,7 +513,7 @@ class TestRealWorldScenarios:
             lang, conf = detector.detect(text)
 
             # Step 2: Get keywords for language
-            keywords = config.get_keywords(lang)
+            config.get_keywords(lang)
             high_priority = config.get_priority_keywords(lang, 'high')
             medium_priority = config.get_priority_keywords(lang, 'medium')
 
@@ -562,7 +559,7 @@ class TestRealWorldScenarios:
         for filename, text in file_batch:
             # Complete workflow for each file
             lang, conf = detector.detect(text)
-            keywords = config.get_keywords(lang)
+            config.get_keywords(lang)
             model = config.get_model_name(lang)
             security_keywords = config.get_security_keywords(lang)
 

@@ -198,7 +198,7 @@ class ProjectService:
         def _get_all(session: Session) -> List[Project]:
             query = session.query(Project)
             if active_only:
-                query = query.filter(Project.is_active == True)
+                query = query.filter(Project.is_active is True)
             return query.order_by(Project.created_at.desc()).all()
 
         try:

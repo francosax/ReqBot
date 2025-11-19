@@ -8,7 +8,6 @@ including proper cleanup to avoid Windows fatal exceptions.
 import pytest
 import sys
 import gc
-import os
 from pathlib import Path
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import QTimer
@@ -87,5 +86,5 @@ def pytest_exception_interact(node, call, report):
             app = QApplication.instance()
             if app:
                 app.processEvents()
-        except:
+        except Exception:
             pass  # Ignore cleanup errors during exception handling

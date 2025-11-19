@@ -117,7 +117,7 @@ def get_requirement_patterns(lang_code: str) -> list:
     patterns = {
         'en': [
             # Modal verb patterns
-            r'\b(shall|must|should|will)\s+(be|have|provide|support|allow|enable|ensure|include|perform|display|accept|reject|generate|calculate|store|retrieve|validate|verify)',
+            r'\b(shall|must|should|will)\s+(be|have|provide|support|allow|enable|ensure|include|perform|display|accept|reject|generate|calculate|store|retrieve|validate|verify)',  # noqa: E501
             # Subject-verb patterns
             r'\b(the\s+\w+|this\s+\w+|all\s+\w+|each\s+\w+|every\s+\w+)\s+(shall|must|should|will)\b',
             # Capability patterns
