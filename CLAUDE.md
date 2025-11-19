@@ -1,7 +1,8 @@
 # CLAUDE.md - AI Assistant Guide for ReqBot
 
-> **Last Updated**: 2025-11-18
-> **Version**: 2.2.0 (In Development)
+> **Last Updated**: 2025-11-19
+> **Version**: 2.2.0 (Development Baseline - Released)
+> **Status**: v2.2 features in development, v3.0 features merged to main
 > **Purpose**: Concise guide for AI assistants working with the ReqBot codebase
 
 ---
@@ -29,8 +30,14 @@
 - **Excel Compliance Matrix**: Color-coded priorities, data validations, formulas
 - **BASIL SPDX 3.0.1 Export**: Industry-standard requirement export
 - **PDF Annotation**: Highlighted PDFs with text annotations
-- **Customizable Keywords**: User-configurable via `RBconfig.ini`
+- **Customizable Keywords**: User-configurable via `RBconfig.ini` or keyword profiles
 - **Multi-threaded Processing**: Non-blocking UI with proper cleanup (v2.1.1 fix)
+- **Recent Projects**: Quick access to last 5 used paths (v2.1.1)
+- **HTML Processing Reports**: Comprehensive extraction reports with statistics (v2.1.1)
+- **Keyword Profiles**: 6 predefined profiles + custom support (v2.2 - merged)
+- **Requirement Categorization**: 9-category auto-classification (v2.2 - merged)
+- **Multi-lingual Support**: Language detection and multi-language NLP (v3.0 - merged)
+- **Database Backend**: SQLAlchemy ORM with full CRUD operations (v3.0 - merged)
 
 ### Tech Stack
 - **UI**: PySide6 (Qt), **PDF**: PyMuPDF (fitz), **NLP**: spaCy en_core_web_sm
@@ -192,6 +199,214 @@ ReqBot follows a **three-layer architecture**:
 
 ---
 
+### get_all_files.py (23 lines)
+**File system utilities**
+
+**Key Function**: `get_all_files(path, extension)`
+
+**Purpose**: Recursively find all files with specific extension, exclude files with "Tagged" in name
+
+---
+
+### version.py (24 lines)
+**Single source of truth for version information**
+
+**Version Constants**: `__version__`, `__version_info__`, `MAJOR`, `MINOR`, `PATCH`, `GUI_VERSION`
+
+**Current Version**: `2.2.0` - "Quality of Life & Performance"
+
+**Purpose**: Centralized version management for all modules
+
+---
+
+### run_app.py (65 lines)
+**Interactive launcher menu for ReqBot**
+
+**Key Function**: `main()`
+
+**Features**:
+- Text-based menu interface
+- Launch main GUI application
+- Quick access to configuration files
+- Help and documentation links
+
+**Entry Point**: Alternative to direct `main_app.py` launch
+
+---
+
+### recent_projects.py (246 lines)
+**Recent paths management with singleton pattern** *(v2.1.1)*
+
+**Key Class**: `RecentProjects` (singleton)
+
+**Key Methods**:
+- `add_input_folder()`, `add_output_folder()`, `add_cm_file()`
+- `get_recent_input_folders()` - Returns last 5 valid paths
+- `load_from_config()`, `save_to_config()` - JSON persistence
+
+**Storage**: `recents_config.json`
+
+**GUI Integration**: QComboBox dropdowns in main_app.py
+
+---
+
+### report_generator.py (542 lines)
+**HTML processing report generation** *(v2.1.1)*
+
+**Key Function**: `generate_processing_report(results_list, output_path)`
+
+**Report Sections**:
+- **Summary Statistics**: Total requirements, avg confidence, file count
+- **Quality Metrics**: Confidence distribution, priority breakdown
+- **File Details**: Per-file extraction results
+- **Warnings & Errors**: Issues encountered during processing
+
+**Output Format**: HTML with embedded CSS, color-coded metrics
+
+**Naming**: `YYYY.MM.DD_HHMMSS_Processing_Report.html`
+
+---
+
+### keyword_profiles.py (~150 lines estimated)
+**Keyword profile management system** *(v2.2 - merged)*
+
+**Key Functions**:
+- `load_profiles()` - Load from `keyword_profiles.json`
+- `save_profiles()` - Persist profile changes
+- `get_profile_keywords(profile_name)` - Retrieve keyword set
+
+**Predefined Profiles**:
+1. **Generic**: Default keywords (shall, must, should, etc.)
+2. **Aerospace**: DO-178C, DO-254 compliance keywords
+3. **Medical**: IEC 62304, FDA compliance keywords
+4. **Automotive**: ISO 26262, ASPICE keywords
+5. **Software**: Agile, user story keywords
+6. **Safety**: Safety-critical system keywords
+
+**Custom Profiles**: User-defined profiles with custom keyword sets
+
+**GUI Integration**: Profile selector dropdown + "Manage Profiles" dialog
+
+---
+
+### requirement_categorizer.py (~180 lines estimated)
+**Automatic requirement categorization** *(v2.2 - merged)*
+
+**Key Function**: `categorize_requirement(requirement_text)`
+
+**9 Categories**:
+1. **Functional**: Core system functionality
+2. **Safety**: Safety-critical requirements
+3. **Performance**: Speed, throughput, efficiency
+4. **Security**: Authentication, encryption, access control
+5. **Interface**: APIs, user interfaces, protocols
+6. **Data**: Data management, storage, integrity
+7. **Compliance**: Regulatory, standards compliance
+8. **Documentation**: Documentation requirements
+9. **Testing**: Test, verification requirements
+
+**Algorithm**: Keyword matching + regex patterns
+
+**Excel Integration**: Adds "Category" column (Column J)
+
+---
+
+### language_detector.py (~120 lines estimated)
+**Language detection for multi-lingual support** *(v3.0 - merged)*
+
+**Key Function**: `detect_language(text)`
+
+**Dependencies**: `langdetect` library
+
+**Supported Languages**: English, French, German, Italian, Spanish
+
+**Returns**: ISO 639-1 language code (e.g., 'en', 'fr', 'de')
+
+**Fallback**: Defaults to English if detection fails
+
+**Purpose**: Enable language-specific NLP model selection
+
+---
+
+### language_config.py (~100 lines estimated)
+**Multi-lingual configuration management** *(v3.0 - merged)*
+
+**Key Data Structures**:
+- `LANGUAGE_MODELS`: Maps language codes to spaCy models
+- `DEFAULT_KEYWORDS`: Language-specific keyword sets
+- `PRIORITY_KEYWORDS`: Language-specific priority detection
+
+**Supported spaCy Models**:
+- English: `en_core_web_sm`
+- French: `fr_core_news_sm`
+- German: `de_core_news_sm`
+- Italian: `it_core_news_sm`
+- Spanish: `es_core_news_sm`
+
+**Purpose**: Centralized language configuration
+
+---
+
+### multilingual_nlp.py (~250 lines estimated)
+**Multi-language NLP processing engine** *(v3.0 - merged)*
+
+**Key Class**: `MultilingualNLP`
+
+**Key Methods**:
+- `load_model(language_code)` - Load language-specific spaCy model
+- `process_text(text, language)` - NLP processing with language detection
+- `extract_sentences(doc)` - Language-aware sentence segmentation
+
+**Features**:
+- Lazy-loading of language models
+- Model caching for performance
+- Fallback to English for unsupported languages
+
+**Integration**: Used by `pdf_analyzer_multilingual.py`
+
+---
+
+### pdf_analyzer_multilingual.py (~400 lines estimated)
+**Multi-lingual PDF requirement extraction** *(v3.0 - merged)*
+
+**Key Function**: `requirement_finder_multilingual(path, keywords_set, filename, language='auto')`
+
+**Features**:
+- Automatic language detection per PDF
+- Language-specific keyword matching
+- Multi-lingual confidence scoring
+- Priority detection across languages
+
+**Algorithm**: Similar to `pdf_analyzer.py` but language-aware
+
+**Status**: Parallel implementation, not yet integrated into main pipeline
+
+---
+
+### database/ (5 files)
+**SQLAlchemy ORM and database services** *(v3.0 - merged)*
+
+#### database/database.py
+- Database initialization and session management
+- SQLite backend (default: `reqbot.db`)
+
+#### database/models.py
+**ORM Models**:
+- `Project`: Project metadata and settings
+- `Document`: PDF document information
+- `Requirement`: Extracted requirements with full metadata
+- `ProcessingSession`: Processing run history
+
+#### database/services/ (4 service modules)
+- **project_service.py**: CRUD operations for projects
+- **document_service.py**: Document management
+- **requirement_service.py**: Requirement queries and updates
+- **session_service.py**: Processing session tracking
+
+**Status**: Fully implemented, not yet integrated into main GUI
+
+---
+
 ## Data Flow
 
 ### Complete Processing Pipeline
@@ -226,9 +441,12 @@ Output: *.xlsx, *.jsonld, *_Tagged.pdf, LOG.txt
     'Raw': ['The', 'system', 'shall', ...],
     'Confidence': 0.85,  # NEW in v2.0
     'Priority': 'high',
+    'Category': 'Functional',  # NEW in v2.2 (merged)
     'Note': 'filename-Req#1-1:The system...'
 }
 ```
+
+**Note**: The `Category` field is added by `requirement_categorizer.py` and written to Excel column J.
 
 ---
 
@@ -455,20 +673,47 @@ python -m spacy download en_core_web_sm
 
 ```
 ReqBot/
-├── main_app.py              # GUI application (v2.1.1 threading fix)
-├── processing_worker.py     # Background thread worker
-├── RB_coordinator.py        # Pipeline orchestrator
-├── pdf_analyzer.py          # NLP extraction (enhanced v2.0)
-├── excel_writer.py          # Excel matrix generator
-├── highlight_requirements.py # PDF annotation (enhanced v2.0)
-├── basil_integration.py     # BASIL SPDX 3.0.1 export/import
-├── config_RB.py             # Configuration manager
-├── get_all_files.py         # File utilities
-├── RBconfig.ini             # Keyword configuration
-├── CLAUDE.md                # This file (AI assistant guide)
-├── README.md                # Project README
-├── TODO.md                  # Project roadmap
-└── tests/                   # Test suite (270+ tests)
+├── main_app.py                    # GUI application (v2.1.1 threading fix)
+├── run_app.py                     # Interactive launcher menu (v2.1.1)
+├── processing_worker.py           # Background thread worker
+├── RB_coordinator.py              # Pipeline orchestrator
+├── version.py                     # Version management (v2.1.1)
+│
+├── pdf_analyzer.py                # NLP extraction (enhanced v2.0)
+├── pdf_analyzer_multilingual.py  # Multi-lingual extraction (v3.0 merged)
+├── excel_writer.py                # Excel matrix generator
+├── highlight_requirements.py     # PDF annotation (enhanced v2.0)
+├── basil_integration.py           # BASIL SPDX 3.0.1 export/import
+│
+├── config_RB.py                   # Configuration manager
+├── get_all_files.py               # File utilities
+├── recent_projects.py             # Recent paths manager (v2.1.1)
+├── report_generator.py            # HTML report generator (v2.1.1)
+│
+├── keyword_profiles.py            # Keyword profile system (v2.2 merged)
+├── requirement_categorizer.py    # Requirement categorization (v2.2 merged)
+│
+├── language_detector.py           # Language detection (v3.0 merged)
+├── language_config.py             # Multi-lingual config (v3.0 merged)
+├── multilingual_nlp.py            # Multi-lingual NLP engine (v3.0 merged)
+│
+├── database/                      # Database backend (v3.0 merged)
+│   ├── database.py                # DB initialization
+│   ├── models.py                  # SQLAlchemy ORM models
+│   └── services/                  # Database services
+│       ├── project_service.py
+│       ├── document_service.py
+│       ├── requirement_service.py
+│       └── session_service.py
+│
+├── config/                        # Configuration files
+├── tests/                         # Test suite (263 passing, 24 files)
+│
+├── RBconfig.ini                   # Keyword configuration
+├── CLAUDE.md                      # This file (AI assistant guide)
+├── README.md                      # Project README
+├── TODO.md                        # Project roadmap
+└── RELEASE_NOTES_v2.2.md         # v2.2.0 release notes
 ```
 
 ---
@@ -476,15 +721,35 @@ ReqBot/
 ## Module Dependencies
 
 ```
-main_app.py
+main_app.py (version.py)
+ ├─ recent_projects.py (singleton)
  └─ processing_worker.py
+     ├─ keyword_profiles.py (v2.2 merged)
+     ├─ report_generator.py (v2.1.1)
+     ├─ config_RB.py (configparser)
+     ├─ get_all_files.py (os)
      └─ RB_coordinator.py
          ├─ pdf_analyzer.py (spacy, fitz, pandas)
+         │   └─ requirement_categorizer.py (v2.2 merged)
+         ├─ pdf_analyzer_multilingual.py (v3.0 merged - not integrated yet)
+         │   ├─ language_detector.py (langdetect)
+         │   ├─ language_config.py
+         │   └─ multilingual_nlp.py (multi-language spacy)
          ├─ excel_writer.py (openpyxl, pandas)
          ├─ basil_integration.py (json, pandas)
          └─ highlight_requirements.py (fitz)
-     └─ config_RB.py (configparser)
-     └─ get_all_files.py (os)
+
+database/ (v3.0 merged - not integrated yet)
+ ├─ database.py (SQLAlchemy)
+ ├─ models.py (ORM: Project, Document, Requirement, ProcessingSession)
+ └─ services/
+     ├─ project_service.py
+     ├─ document_service.py
+     ├─ requirement_service.py
+     └─ session_service.py
+
+run_app.py (v2.1.1 - standalone launcher)
+ └─ main_app.py
 ```
 
 ---
@@ -523,13 +788,16 @@ main_app.py
 
 ## Version History
 
-| Version | Date | Changes |
-|---------|------|---------|
-| 2.2.0 | Q2 2026 | Quality of life improvements, performance optimizations (In Development) |
-| 2.1.1 | 2025-11-18 | Thread cleanup fix for multiple sequential extractions |
-| 2.1.0 | 2025-11-17 | UX enhancements, confidence threshold, BASIL integration |
-| 2.0.0 | 2025-11-15 | Major NLP improvements, confidence scoring |
-| 1.x | Previous | Base functionality |
+| Version | Date | Status | Changes |
+|---------|------|--------|---------|
+| 3.0.0 | TBD | In Development | Multi-lingual extraction, database backend (features merged to main) |
+| 2.2.0 | 2025-11-18 | **Development Baseline** | Baseline set for v2.2 development. Features in progress: keyword profiles ✅, requirement categorization ✅, search/filter (pending), drag & drop (pending) |
+| 2.1.1 | 2025-11-18 | Released | Thread cleanup fix, recent projects, HTML reports, confidence threshold UI |
+| 2.1.0 | 2025-11-17 | Released | UX enhancements, confidence scoring, BASIL integration |
+| 2.0.0 | 2025-11-15 | Released | Major NLP improvements, confidence scoring system |
+| 1.x | Previous | Released | Base functionality |
+
+**Note**: v2.2.0 is currently a **development baseline** - the version number is set and some features are merged, but full v2.2.0 release is targeted for Q2 2026. v3.0 features (multilingual, database) have been merged to main branch but not yet integrated into the GUI.
 
 ---
 
