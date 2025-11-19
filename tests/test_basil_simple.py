@@ -11,9 +11,11 @@ from datetime import datetime
 
 # Test utility functions without importing the full module
 
+
 def calculate_md5_hash(text: str) -> str:
     """Calculate MD5 hash of a text string."""
     return hashlib.md5(text.encode('utf-8')).hexdigest()
+
 
 def extract_requirement_id(label_number: str) -> int:
     """Extract numeric ID from ReqBot label number format."""
@@ -27,6 +29,7 @@ def extract_requirement_id(label_number: str) -> int:
     except (ValueError, IndexError) as e:
         print(f"Warning: Failed to extract ID from label {label_number}: {str(e)}")
         return 0
+
 
 def create_basil_requirement_dict(req_id, title, description, priority="low"):
     """Create a BASIL requirement structure as dictionary."""
@@ -99,6 +102,7 @@ def create_basil_requirement_dict(req_id, title, description, priority="low"):
 
     return file_element, annotation_element
 
+
 def validate_basil_structure(data):
     """Validate BASIL/SPDX structure."""
     errors = []
@@ -129,6 +133,8 @@ def validate_basil_structure(data):
     return True, [f"Valid BASIL format with {req_count} requirements"]
 
 # Run tests
+
+
 def main():
     print("=" * 70)
     print("BASIL Integration - Simple Functionality Test")
@@ -272,7 +278,7 @@ def main():
 
     is_valid, messages = validate_basil_structure(loaded_data)
     assert is_valid, "Loaded document should be valid"
-    print(f"✓ Successfully loaded from file")
+    print("✓ Successfully loaded from file")
     print(f"✓ Document type: {loaded_data['type']}")
     print(f"✓ Document name: {loaded_data['name']}")
     print(f"✓ Elements count: {len(loaded_data['element'])}")
@@ -328,19 +334,20 @@ def main():
     print("=" * 70)
     print()
     print("Summary:")
-    print(f"  - MD5 hashing: Working")
-    print(f"  - ID extraction: Working")
-    print(f"  - BASIL structure creation: Working")
-    print(f"  - SPDX document creation: Working")
-    print(f"  - Format validation: Working")
-    print(f"  - File I/O: Working")
-    print(f"  - Data integrity: Working")
-    print(f"  - Hash verification: Working")
+    print("  - MD5 hashing: Working")
+    print("  - ID extraction: Working")
+    print("  - BASIL structure creation: Working")
+    print("  - SPDX document creation: Working")
+    print("  - Format validation: Working")
+    print("  - File I/O: Working")
+    print("  - Data integrity: Working")
+    print("  - Hash verification: Working")
     print()
     print(f"Generated test file: {output_file}")
     print()
 
     return 0
+
 
 if __name__ == "__main__":
     sys.exit(main())

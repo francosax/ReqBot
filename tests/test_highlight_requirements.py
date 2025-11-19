@@ -5,10 +5,11 @@ import pytest
 
 from highlight_requirements import highlight_requirements
 
+
 @pytest.fixture
 def sample_pdf():
     # Create a temporary PDF with some text for testing
-    doc = fitz.open() #"D:\\PycharmProjects\\RequirementBot\\V12_rel\\RB_1.2\\static\\pippo.pdf",filetype = "pdf")
+    doc = fitz.open()  # "D:\\PycharmProjects\\RequirementBot\\V12_rel\\RB_1.2\\static\\pippo.pdf",filetype = "pdf")
     page = doc.new_page()
     text = "REQ-001: The system should allow user login.\nREQ-002: The system should allow user registration."
     rect = fitz.Rect(50, 50, 500, 100)
@@ -20,12 +21,13 @@ def sample_pdf():
     yield path
     os.remove(path)
 
+
 def test_highlight_requirements_basic(sample_pdf):
     # Prepare
     # Get the text coordinates by extracting from the PDF
     doc = fitz.open(sample_pdf)
     page = doc[0]
-    words = page.get_text("words")
+    page.get_text("words")
     # "REQ-001:" "The" "system" "should" "allow" "user" "login."
     req1 = ["REQ-001:", "The", "system", "should", "allow", "user", "login."]
     req2 = ["REQ-002:", "The", "system", "should", "allow", "user", "registration."]
@@ -57,6 +59,7 @@ def test_highlight_requirements_basic(sample_pdf):
     finally:
         if os.path.exists(out_pdf):
             os.remove(out_pdf)
+
 
 def test_highlight_requirements_no_match(sample_pdf):
     requirements_list = [["Nonexistent", "requirement"]]

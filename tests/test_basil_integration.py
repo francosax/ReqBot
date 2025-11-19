@@ -7,9 +7,6 @@ Tests the import/export functionality for BASIL-compatible SPDX 3.0.1 format.
 import pytest
 import json
 import pandas as pd
-from pathlib import Path
-import tempfile
-import os
 
 from basil_integration import (
     calculate_md5_hash,

@@ -13,7 +13,6 @@ import logging
 import threading
 from contextlib import contextmanager
 from typing import Generator, Optional
-import os
 import shutil
 from datetime import datetime
 from pathlib import Path
@@ -58,6 +57,7 @@ _scoped_session_lock = threading.Lock()
 # ============================================================================
 # SQLite Optimization
 # ============================================================================
+
 
 @event.listens_for(Engine, "connect")
 def set_sqlite_pragma(dbapi_conn, connection_record):

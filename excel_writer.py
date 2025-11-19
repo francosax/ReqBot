@@ -1,10 +1,11 @@
 import os
-from openpyxl import load_workbook, Workbook # Import Workbook
+from openpyxl import load_workbook, Workbook  # Import Workbook
 from openpyxl.styles import PatternFill
 from openpyxl.styles.colors import Color
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.datavalidation import DataValidation
-import pandas as pd # You'll need pandas to create a DataFrame easily
+import pandas as pd  # You'll need pandas to create a DataFrame easily
+
 
 def write_excel_file(df, excel_file):
     """
@@ -29,20 +30,24 @@ def write_excel_file(df, excel_file):
         writer = book['MACHINE COMP. MATRIX']
 
         # Priority color fills (for column H)
-        fill_high = PatternFill(start_color=Color(rgb='00FF0000'), end_color=Color(rgb='00FF0000'), fill_type='solid') # Red
-        fill_medium = PatternFill(start_color=Color(rgb='00FFFF00'), end_color=Color(rgb='00FFFF00'), fill_type='solid') # Yellow
-        fill_low = PatternFill(start_color=Color(rgb='0000FF00'), end_color=Color(rgb='0000FF00'), fill_type='solid') # Green
+        fill_high = PatternFill(start_color=Color(rgb='00FF0000'), end_color=Color(rgb='00FF0000'), fill_type='solid')  # Red
+        fill_medium = PatternFill(start_color=Color(rgb='00FFFF00'),
+                                  end_color=Color(rgb='00FFFF00'), fill_type='solid')  # Yellow
+        fill_low = PatternFill(start_color=Color(rgb='0000FF00'), end_color=Color(rgb='0000FF00'), fill_type='solid')  # Green
 
         # Confidence color fills (for column E)
         # High confidence: Green (≥0.8), Medium: Yellow (0.6-0.8), Low: Red (<0.6)
-        fill_conf_high = PatternFill(start_color=Color(rgb='0000FF00'), end_color=Color(rgb='0000FF00'), fill_type='solid') # Green
-        fill_conf_medium = PatternFill(start_color=Color(rgb='00FFFF00'), end_color=Color(rgb='00FFFF00'), fill_type='solid') # Yellow
-        fill_conf_low = PatternFill(start_color=Color(rgb='00FF0000'), end_color=Color(rgb='00FF0000'), fill_type='solid') # Red
+        fill_conf_high = PatternFill(start_color=Color(rgb='0000FF00'),
+                                     end_color=Color(rgb='0000FF00'), fill_type='solid')  # Green
+        fill_conf_medium = PatternFill(start_color=Color(rgb='00FFFF00'),
+                                       end_color=Color(rgb='00FFFF00'), fill_type='solid')  # Yellow
+        fill_conf_low = PatternFill(start_color=Color(rgb='00FF0000'),
+                                    end_color=Color(rgb='00FF0000'), fill_type='solid')  # Red
 
         # Update the Compliance Matrix with the requirements
         # Starting from row 5
         for i, (value1, value2, value3, value4, value5, value6, value7) in enumerate(
-                zip(df.index, df['Page'], df['Label Number'], df['Description'], df['Priority'], df['Confidence'], df['Category']), start=5):
+                zip(df.index, df['Page'], df['Label Number'], df['Description'], df['Priority'], df['Confidence'], df['Category']), start=5):  # noqa: E501
 
             writer[f'A{i}'] = value1         # df.index
             writer[f'B{i}'] = value2         # Page
@@ -53,7 +58,7 @@ def write_excel_file(df, excel_file):
             writer[f'J{i}'] = value7         # Category (v2.2)
 
             # Apply fill based on priority (column I - shifted from H)
-            priority = str(value5).lower() # Ensure priority is string and lowercase for comparison
+            priority = str(value5).lower()  # Ensure priority is string and lowercase for comparison
             if priority == 'high':
                 writer[f'I{i}'].fill = fill_high
             elif priority == 'medium':
@@ -88,7 +93,8 @@ def write_excel_file(df, excel_file):
         dv2 = DataValidation(type="list", formula1='"Machine,Product,Company"', allow_blank=True)
         dv2.add('K5:K1048576')  # Shifted from J to K
 
-        dv3 = DataValidation(type="list", formula1='"Concept,UTM,UTS,UTE,SW,Testing,Process,Assembly,Logistic,Quality,PM,Purchasing,Sales,Service"', allow_blank=True)
+        dv3 = DataValidation(
+            type="list", formula1='"Concept,UTM,UTS,UTE,SW,Testing,Process,Assembly,Logistic,Quality,PM,Purchasing,Sales,Service"', allow_blank=True)  # noqa: E501
         dv3.add('L5:L1048576')  # Shifted from K to L
 
         dv4 = DataValidation(type="list", formula1='"Approved,Rejected,In discussion,Acquired"', allow_blank=True)
@@ -119,27 +125,27 @@ def write_excel_file(df, excel_file):
         # NOTE: All columns shifted right by 1 due to Confidence column in E
         for i in range(5, writer.max_row + 1):
             col_i = get_column_letter(9)  # I (Priority - shifted from H)
-            col_n = get_column_letter(14) # N (Status - shifted from M)
-            col_o = get_column_letter(15) # O (Completeness - shifted from N)
-            col_p = get_column_letter(16) # P (Difficulty - shifted from O)
-            col_q = get_column_letter(17) # Q (Output column for formula - shifted from P)
+            col_n = get_column_letter(14)  # N (Status - shifted from M)
+            col_o = get_column_letter(15)  # O (Completeness - shifted from N)
+            col_p = get_column_letter(16)  # P (Difficulty - shifted from O)
+            col_q = get_column_letter(17)  # Q (Output column for formula - shifted from P)
 
             # Construct the formula string. Be careful with double quotes inside
             # the formula if they are part of string literals for Excel.
             # Using single quotes for Python string and escaping double quotes for Excel string literals.
             formula = (
                 f'=ROUND((('
-                f'(IF({col_i}{i}="high", 3, IF({col_i}{i}="medium", 2, IF({col_i}{i}="low", 1, 0))) * 4/3) + ' # Priority
-                f'(IF({col_o}{i}="yes", 1, IF({col_o}{i}="partially", 2, IF({col_o}{i}="no", 3, 0))) * 3/3) + ' # Completeness
-                f'(IF({col_p}{i}="hard", 3, IF({col_p}{i}="medium", 2, IF({col_p}{i}="easy", 1, 0))) * 2/3)' # Difficulty
+                f'(IF({col_i}{i}="high", 3, IF({col_i}{i}="medium", 2, IF({col_i}{i}="low", 1, 0))) * 4/3) + '  # Priority
+                f'(IF({col_o}{i}="yes", 1, IF({col_o}{i}="partially", 2, IF({col_o}{i}="no", 3, 0))) * 3/3) + '  # Completeness
+                f'(IF({col_p}{i}="hard", 3, IF({col_p}{i}="medium", 2, IF({col_p}{i}="easy", 1, 0))) * 2/3)'  # Difficulty
                 f') - 3) * '
-                f'IF({col_n}{i}="Approved", 1, IF({col_n}{i}="Rejected", 0, IF({col_n}{i}="In discussion", 1, IF({col_n}{i}="Acquired", 1, 0))))'
+                f'IF({col_n}{i}="Approved", 1, IF({col_n}{i}="Rejected", 0, IF({col_n}{i}="In discussion", 1, IF({col_n}{i}="Acquired", 1, 0))))'  # noqa: E501
                 f'), 2)'
             )
 
             writer[f'{col_q}{i}'].value = None  # Clear existing value
             writer[f'{col_q}{i}'].value = formula  # Insert the formula
-            writer[f'{col_q}{i}'].number_format = '0' # Ensure it's formatted as a number
+            writer[f'{col_q}{i}'].number_format = '0'  # Ensure it's formatted as a number
 
         # Add auto-filter to allow filtering by confidence and other columns
         # Apply filter to row 4 (header row) - assumes headers are in row 4
@@ -158,6 +164,7 @@ def write_excel_file(df, excel_file):
     except Exception as e:
         print(f"An error occurred: {e}")
 
+
 if __name__ == '__main__':
     excel_template_path = "template_compliance_matrix.xlsx"
 
@@ -166,8 +173,8 @@ if __name__ == '__main__':
 
     if not os.path.exists(excel_template_path):
         print(f"Creating a dummy template: {excel_template_path}")
-        dummy_book = Workbook() # <--- CORRECTED: Use openpyxl.Workbook() for new workbook
-        dummy_book.create_sheet('MACHINE COMP. MATRIX', 0) # Create at the first position
+        dummy_book = Workbook()  # <--- CORRECTED: Use openpyxl.Workbook() for new workbook
+        dummy_book.create_sheet('MACHINE COMP. MATRIX', 0)  # Create at the first position
         # Remove the default 'Sheet' created by Workbook() constructor
         if 'Sheet' in dummy_book.sheetnames:
             del dummy_book['Sheet']
@@ -183,7 +190,7 @@ if __name__ == '__main__':
         dummy_sheet['M1'] = "Status"
         dummy_sheet['N1'] = "Completeness"
         dummy_sheet['O1'] = "Difficulty"
-        dummy_sheet['P1'] = "Calculated Value" # For the formula output
+        dummy_sheet['P1'] = "Calculated Value"  # For the formula output
 
         # Add a few rows of dummy data starting from row 5
         dummy_sheet['A5'] = "DUMMY-001"
@@ -211,7 +218,6 @@ if __name__ == '__main__':
         print("Dummy template created with initial data and headers.")
     else:
         print(f"File '{excel_template_path}' already exists. Updating it.")
-
 
     data = {
         'Page': [1, 1, 2, 3],

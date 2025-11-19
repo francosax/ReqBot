@@ -2,7 +2,6 @@ import os
 import pytest
 import pandas as pd
 from openpyxl import load_workbook, Workbook
-from openpyxl.styles import PatternFill
 from openpyxl.styles.colors import Color
 from openpyxl.utils import get_column_letter
 import tempfile  # <--- ADD THIS IMPORT
@@ -103,7 +102,7 @@ def test_write_excel_file_data_validations(empty_compliance_matrix_template):
     excel_file = empty_compliance_matrix_template
 
     data = {  # Minimal data just to get the function to run
-        'Page': [1], 'Label Number': ['L001'], 'Description': ['Desc'], 'Priority': ['high'], 'Confidence': [0.85], 'Category': ['Functional']
+        'Page': [1], 'Label Number': ['L001'], 'Description': ['Desc'], 'Priority': ['high'], 'Confidence': [0.85], 'Category': ['Functional']  # noqa: E501
     }
     df = pd.DataFrame(data, index=['REQ-X'])
 

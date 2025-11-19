@@ -72,7 +72,7 @@ class TestLanguageDetection:
         return {
             'en': "The system shall ensure that all requirements are met. The security must be guaranteed.",
             'fr': "Le système doit garantir que toutes les exigences sont remplies. La sécurité devra être assurée.",
-            'de': "Das System muss sicherstellen, dass alle Anforderungen erfüllt sind. Die Sicherheit soll gewährleistet werden.",
+            'de': "Das System muss sicherstellen, dass alle Anforderungen erfüllt sind. Die Sicherheit soll gewährleistet werden.",  # noqa: E501
             'it': "Il sistema deve garantire che tutti i requisiti siano soddisfatti. La sicurezza deve essere garantita.",
             'es': "El sistema debe garantizar que todos los requisitos se cumplan. La seguridad debe estar garantizada."
         }

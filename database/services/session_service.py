@@ -149,7 +149,7 @@ class ProcessingSessionService:
 
             session.flush()
             logger.info(f"Completed processing session {session_id}: "
-                       f"{requirements_extracted} requirements from {documents_processed} documents")
+                        f"{requirements_extracted} requirements from {documents_processed} documents")
             return proc_session
 
         try:

@@ -19,7 +19,7 @@ Categories:
 """
 
 import re
-from typing import Dict, List, Set
+from typing import Dict, List
 import logging
 
 logger = logging.getLogger(__name__)

@@ -7,7 +7,7 @@ PySide6>=6.5.0
 PyMuPDF>=1.23.0
 
 # NLP Processing
-spacy>=3.6.0
+spacy==3.7.6  # Pinned version with reliable binary wheels for all platforms
 
 # Language Detection (v3.0 - Multi-lingual)
 # Note: Using built-in character pattern detection to avoid external dependencies

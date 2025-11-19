@@ -6,6 +6,7 @@ Test BASIL import and validation functionality.
 import json
 import sys
 
+
 def validate_basil_format(data):
     """Validate that a JSON structure conforms to BASIL/SPDX 3.0.1 format."""
     try:
@@ -159,10 +160,10 @@ def main():
     is_valid, message = validate_basil_format(data)
 
     if is_valid:
-        print(f"✓ Validation: PASSED")
+        print("✓ Validation: PASSED")
         print(f"  {message}")
     else:
-        print(f"✗ Validation: FAILED")
+        print("✗ Validation: FAILED")
         print(f"  {message}")
         return 1
 
@@ -296,11 +297,11 @@ def main():
     print("=" * 70)
     print()
     print("Summary:")
-    print(f"  - Format validation: Working ✓")
-    print(f"  - Requirements import: Working ✓")
-    print(f"  - Data integrity: Working ✓")
-    print(f"  - Round-trip preservation: Working ✓")
-    print(f"  - Error handling: Working ✓")
+    print("  - Format validation: Working ✓")
+    print("  - Requirements import: Working ✓")
+    print("  - Data integrity: Working ✓")
+    print("  - Round-trip preservation: Working ✓")
+    print("  - Error handling: Working ✓")
     print()
     print(f"Successfully imported {len(requirements)} requirements from BASIL format")
     print()

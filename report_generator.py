@@ -12,11 +12,9 @@ Features:
 - Per-file breakdown
 """
 
-import os
 import logging
 from datetime import datetime
-from typing import List, Dict, Optional, Tuple
-import base64
+from typing import List, Dict, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +54,7 @@ class ProcessingReport:
         self.end_time = datetime.now()
 
     def add_file_result(self, filename: str, req_count: int, avg_confidence: float,
-                       execution_time_seconds: float, file_warnings: List[str] = None):
+                        execution_time_seconds: float, file_warnings: List[str] = None):
         """
         Add results from processing a single file.
 

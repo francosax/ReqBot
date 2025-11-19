@@ -56,6 +56,7 @@ POSTGRES_URL = (
 # Active Database URL
 # ============================================================================
 
+
 def get_database_url():
     """
     Get the active database URL based on configuration.
@@ -120,6 +121,7 @@ MAX_BACKUPS = 10
 # ============================================================================
 # Helper Functions
 # ============================================================================
+
 
 def get_sqlite_path():
     """
