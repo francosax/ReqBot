@@ -273,7 +273,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 ## 🔗 Related Versions
 
 - **Previous Release**: [v2.1.1](THREADING_FIX_SUMMARY.md) - Threading fix and UX enhancements
-- **Next Major Release**: [v3.0.0](TODO.md) - Multilingual extraction and database backend
+- **Next Major Release**: [v3.0.0](../TODO.md) - Multilingual extraction and database backend
 
 ---
 
@@ -281,7 +281,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 - **Issues**: [GitHub Issues](https://github.com/francosax/ReqBot/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/francosax/ReqBot/discussions)
-- **Documentation**: [CLAUDE.md](CLAUDE.md), [README.md](README.md)
+- **Documentation**: [CLAUDE.md](../CLAUDE.md), [README.md](../README.md)
 
 ---
 

@@ -4,6 +4,8 @@
     <content url="file://$MODULE_DIR$">
       <excludeFolder url="file://$MODULE_DIR$/.venv" />
       <excludeFolder url="file://$MODULE_DIR$/.venv1" />
+      <excludeFolder url="file://$MODULE_DIR$/.claude" />
+      <excludeFolder url="file://$MODULE_DIR$/sampleIO/test_output" />
     </content>
     <orderEntry type="jdk" jdkName="Python 3.8 (ReqBot)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />

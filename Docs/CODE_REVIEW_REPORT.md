@@ -2123,13 +2123,13 @@ EXCEL_DATA_START_ROW = 5
 EXCEL_HEADER_ROWS = 4
 
 # Color codes (RGB hex)
-COLOR_PRIORITY_HIGH = 'FF0000'      # Red
-COLOR_PRIORITY_MEDIUM = 'FFFF00'    # Yellow
-COLOR_PRIORITY_LOW = '00FF00'       # Green
+COLOR_PRIORITY_HIGH = 'FF0000'  # Red
+COLOR_PRIORITY_MEDIUM = 'FFFF00'  # Yellow
+COLOR_PRIORITY_LOW = '00FF00'  # Green
 
-COLOR_CONFIDENCE_HIGH = '00FF00'    # Green (≥0.8)
+COLOR_CONFIDENCE_HIGH = '00FF00'  # Green (≥0.8)
 COLOR_CONFIDENCE_MEDIUM = 'FFFF00'  # Yellow (0.6-0.8)
-COLOR_CONFIDENCE_LOW = 'FF0000'     # Red (<0.6)
+COLOR_CONFIDENCE_LOW = 'FF0000'  # Red (<0.6)
 
 # Confidence thresholds for coloring
 CONFIDENCE_HIGH_THRESHOLD = 0.8
@@ -2172,7 +2172,7 @@ MINIMUM_WINDOW_HEIGHT = 400
 
 # Progress bar
 PROGRESS_PIPELINE_PERCENT = 90  # 90% for file processing
-PROGRESS_REPORT_PERCENT = 95    # 95% for report generation
+PROGRESS_REPORT_PERCENT = 95  # 95% for report generation
 PROGRESS_COMPLETE_PERCENT = 100
 
 # ============================================================================
@@ -2180,7 +2180,7 @@ PROGRESS_COMPLETE_PERCENT = 100
 # ============================================================================
 
 # Default database file
-DEFAULT_DATABASE_FILE = 'reqbot.db'
+DEFAULT_DATABASE_FILE = '../reqbot.db'
 
 # Query limits
 DEFAULT_QUERY_LIMIT = 1000
@@ -2191,10 +2191,10 @@ MAX_BATCH_SIZE = 100
 # ============================================================================
 
 PRIORITY_KEYWORDS = {
-    'high': ['must', 'shall'],
-    'medium': ['should', 'has to'],
-    'security': ['security'],
-    'low': []  # default
+   'high': ['must', 'shall'],
+   'medium': ['should', 'has to'],
+   'security': ['security'],
+   'low': []  # default
 }
 
 # ============================================================================
@@ -2211,8 +2211,8 @@ ALLOWED_OUTPUT_EXTENSIONS = ['.pdf', '.xlsx', '.jsonld', '.html', '.txt']
 
 # Path validation
 SUSPICIOUS_PATH_PATTERNS = [
-    'etc/passwd', 'etc/shadow', 'windows/system32',
-    '.ssh', 'id_rsa', 'authorized_keys', 'config'
+   'etc/passwd', 'etc/shadow', 'windows/system32',
+   '.ssh', 'id_rsa', 'authorized_keys', 'config'
 ]
 
 # Filename validation

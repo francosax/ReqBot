@@ -5,7 +5,7 @@
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Version](https://img.shields.io/badge/version-2.2.0--dev-orange.svg)](TODO.md)
-[![Development Status](https://img.shields.io/badge/status-in%20development-yellow.svg)](RELEASE_NOTES_v2.2.md)
+[![Development Status](https://img.shields.io/badge/status-in%20development-yellow.svg)](Docs/RELEASE_NOTES_v2.2.md)
 
 ReqBot is a powerful desktop application that automatically extracts requirements from PDF specification documents using advanced NLP techniques. It generates compliance matrices in Excel format, BASIL-compatible SPDX exports, and creates annotated PDFs with highlighted requirements.
 
@@ -24,7 +24,7 @@ Version 2.2.0 focuses on **quality of life improvements and performance**:
 - 🧪 **Enhanced Testing** (Planned) - 80%+ test coverage, CI/CD pipeline
 - 📚 **Comprehensive Documentation** (Planned) - Video tutorials, user manual, FAQ
 
-[📝 See Full v2.2 Release Notes](RELEASE_NOTES_v2.2.md)
+[📝 See Full v2.2 Release Notes](Docs/RELEASE_NOTES_v2.2.md)
 
 ### Version 2.1.1 (Released)
 
