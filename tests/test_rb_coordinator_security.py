@@ -11,7 +11,7 @@ Tests the main orchestration function with focus on:
 import pytest
 import os
 import pandas as pd
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import patch
 from pathlib import Path
 
 from security.path_validator import PathValidationError

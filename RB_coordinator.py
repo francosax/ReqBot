@@ -172,7 +172,7 @@ def requirement_bot(path_in, cm_path, words_to_find, path_out, confidence_thresh
         logger.info(f"Copied CM template to: {sanitize_path_for_logging(str(validated_cm_output))}")
 
         write_excel_file(df=df, excel_file=str(validated_cm_output))
-        logger.info(f"Excel compliance matrix generated successfully")
+        logger.info("Excel compliance matrix generated successfully")
 
     except PathValidationError as e:
         logger.error(f"Failed to validate CM output path: {str(e)}")

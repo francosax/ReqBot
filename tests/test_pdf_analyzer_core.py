@@ -10,9 +10,6 @@ Tests the critical requirement extraction logic including:
 """
 
 import pytest
-import pandas as pd
-from unittest.mock import Mock, patch, MagicMock
-import sys
 
 # Import functions to test
 from pdf_analyzer import (

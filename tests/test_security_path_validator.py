@@ -11,7 +11,6 @@ Tests comprehensive path validation functionality including:
 
 import pytest
 import os
-import tempfile
 from pathlib import Path
 
 from security.path_validator import (
