@@ -290,9 +290,11 @@ class TestProcessingReport:
         content = output_path.read_text(encoding='utf-8')
 
         # Should have the structure but not the warning/error sections
-        # Check that there are no warning or error list items
-        assert content.count("warning-list") == 0
-        assert content.count("error-list") == 0
+        # Check that there are no warning or error sections (CSS classes will still exist in style tags)
+        assert "warnings-section" not in content
+        assert "errors-section" not in content
+        assert "⚠️ Warnings" not in content
+        assert "❌ Errors" not in content
 
     def test_statistics_weighted_average(self):
         """Test that confidence average is correctly weighted by requirement count."""

@@ -244,8 +244,6 @@ def test_basil_integration():
     print("Status: ✅ READY FOR USE")
     print()
 
-    return 0
-
 
 if __name__ == "__main__":
     sys.exit(test_basil_integration())

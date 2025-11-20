@@ -262,7 +262,8 @@ def test_dragdrop_integration():
     print("Status: ✅ DRAG & DROP INTEGRATION COMPLETE")
     print()
 
-    return 0 if all_passed else 1
+    # Assert all tests passed instead of returning status code
+    assert all_passed, "Some drag & drop integration tests failed"
 
 
 if __name__ == "__main__":

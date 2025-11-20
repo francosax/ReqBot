@@ -24,6 +24,14 @@ from recent_projects import get_recents_manager
 # Import keyword profiles manager (v2.2)
 from keyword_profiles import get_profiles_manager
 
+# Import security validation (Critical Security Fix)
+from security.path_validator import (
+    PathValidationError,
+    validate_directory,
+    validate_excel_template,
+    sanitize_path_for_logging
+)
+
 # Import database initialization (v3.0) - Optional dependency
 try:
     from database.database import auto_initialize_database
@@ -501,34 +509,95 @@ class RequirementBotApp(QWidget):
         """
         Validates all necessary input fields before starting processing.
 
-        NEW: Uses currentText() for QComboBox widgets.
+        SECURITY UPDATE: Now uses security.path_validator for comprehensive
+        validation including path traversal prevention.
+
+        Returns:
+            bool: True if all inputs are valid, False otherwise
         """
-        folder_input = self.folderPath_input.currentText()  # NEW: currentText() for QComboBox
+        folder_input = self.folderPath_input.currentText()
         folder_output = self.folderPath_output.currentText()
         CM_file = self.CM_path.currentText()
 
-        if not os.path.isdir(folder_input):
-            QMessageBox.warning(self, 'Input Error', 'Please select a valid Input Folder.')
-            self.logger.warning(f"Invalid input folder: {folder_input}")
+        # Check for empty inputs
+        if not folder_input:
+            QMessageBox.warning(self, 'Input Error', 'Please select an Input Folder.')
             return False
 
-        if not os.path.isdir(folder_output):
-            QMessageBox.warning(self, 'Input Error', 'Please select a valid Output Folder.')
-            self.logger.warning(f"Invalid output folder: {folder_output}")
+        if not folder_output:
+            QMessageBox.warning(self, 'Input Error', 'Please select an Output Folder.')
             return False
 
-        if not os.path.exists(CM_file):
-            QMessageBox.warning(self, 'Input Error', 'Please select a valid Compliance Matrix file.')
-            self.logger.warning(f"CM file not found: {CM_file}")
+        if not CM_file:
+            QMessageBox.warning(self, 'Input Error', 'Please select a Compliance Matrix file.')
             return False
 
-        if CM_TEMPLATE_NAME not in CM_file:
-            msg = ('The chosen file is not the correct Compliance Matrix '
-                   f'Template (expected "{CM_TEMPLATE_NAME}"). '
-                   'Please select the correct file.')
-            QMessageBox.information(self, 'Error Message', msg)
-            self.logger.error(f"Incorrect CM template selected: {CM_file}")
+        try:
+            # Validate input folder with security checks
+            validated_input = validate_directory(
+                folder_input,
+                must_exist=True,
+                check_writable=False
+            )
+            self.logger.info(f"Input folder validated: {sanitize_path_for_logging(str(validated_input))}")
+
+        except PathValidationError as e:
+            QMessageBox.warning(
+                self,
+                'Input Folder Error',
+                f'Invalid input folder:\n{str(e)}'
+            )
+            self.logger.warning(f"Input folder validation failed: {str(e)}")
             return False
+
+        try:
+            # Validate output folder with security checks (must be writable)
+            validated_output = validate_directory(
+                folder_output,
+                must_exist=True,
+                check_writable=True
+            )
+            self.logger.info(f"Output folder validated: {sanitize_path_for_logging(str(validated_output))}")
+
+        except PathValidationError as e:
+            QMessageBox.warning(
+                self,
+                'Output Folder Error',
+                f'Invalid output folder:\n{str(e)}'
+            )
+            self.logger.warning(f"Output folder validation failed: {str(e)}")
+            return False
+
+        try:
+            # Validate Compliance Matrix file with security checks
+            validated_cm = validate_excel_template(CM_file)
+            self.logger.info(f"CM template validated: {sanitize_path_for_logging(str(validated_cm))}")
+
+            # Check if filename contains the expected template name
+            if CM_TEMPLATE_NAME not in validated_cm.name:
+                msg = (
+                    f'The chosen file is not the correct Compliance Matrix '
+                    f'Template (expected "{CM_TEMPLATE_NAME}").\n'
+                    f'Please select the correct file.'
+                )
+                QMessageBox.information(self, 'Template Name Mismatch', msg)
+                self.logger.error(
+                    f"Incorrect CM template selected: expected '{CM_TEMPLATE_NAME}' "
+                    f"in filename, got '{validated_cm.name}'"
+                )
+                return False
+
+        except PathValidationError as e:
+            QMessageBox.warning(
+                self,
+                'Compliance Matrix Error',
+                f'Invalid Compliance Matrix file:\n{str(e)}'
+            )
+            self.logger.warning(f"CM file validation failed: {str(e)}")
+            return False
+
+        # All validations passed
+        self.logger.info("All input validations passed successfully")
         return True
 
     def start_processing(self):

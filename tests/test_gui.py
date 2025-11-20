@@ -28,8 +28,21 @@ def app():
 
 
 @pytest.fixture
-def gui(app, qtbot):
+def gui(app, qtbot, tmp_path):
     """Create RequirementBotApp instance for tests with proper cleanup."""
+    # Clear recent projects before creating GUI to ensure clean state
+    recents_config_path = os.path.join(os.getcwd(), 'recents_config.json')
+    backup_path = recents_config_path + '.test_backup'
+
+    # Backup existing config if it exists
+    if os.path.exists(recents_config_path):
+        if os.path.exists(backup_path):
+            os.remove(backup_path)
+        os.rename(recents_config_path, backup_path)
+    else:
+        backup_path = None
+
+    # Create GUI with clean recent projects state
     gui = RequirementBotApp()
     gui.show()
     yield gui
@@ -56,6 +69,13 @@ def gui(app, qtbot):
 
         # Process deleteLater events
         app.processEvents()
+
+        # Restore the recent projects config if it was backed up
+        if backup_path and os.path.exists(backup_path):
+            # Remove test-generated config
+            if os.path.exists(recents_config_path):
+                os.remove(recents_config_path)
+            os.rename(backup_path, recents_config_path)
 
     except Exception as e:
         # Log but don't fail test on cleanup errors
@@ -136,6 +156,56 @@ def test_task_finished_shows_messagebox(gui, qtbot, monkeypatch):
     # Use the correct method name with required message parameter
     gui.on_processing_finished("Test completion message")
     assert shown.get('called', False)
+
+def test_threading_fix_prevents_double_start(gui, qtbot, monkeypatch):
+    """Test that starting processing while already running shows a warning."""
+    # Mock the QThread to simulate a running thread
+    from PySide6.QtCore import QThread
+
+    # Create a mock thread that reports as running
+    class MockThread:
+        def isRunning(self):
+            return True
+        def wait(self):
+            pass
+        def quit(self):
+            pass
+
+    # Set the mock thread
+    gui._worker_thread = MockThread()
+
+    warning_shown = {}
+    log_called = {}
+
+    def fake_warning(*args, **kwargs):
+        warning_shown['called'] = True
+        warning_shown['title'] = args[1] if len(args) > 1 else None
+        warning_shown['message'] = args[2] if len(args) > 2 else None
+        return QMessageBox.StandardButton.Ok
+
+    def fake_logger_warning(msg, *args, **kwargs):
+        log_called['called'] = True
+        log_called['message'] = msg
+        # Don't actually emit to widget to avoid Qt deletion issues
+
+    # Monkeypatch QMessageBox.warning and logger.warning
+    monkeypatch.setattr("PySide6.QtWidgets.QMessageBox.warning", fake_warning)
+    monkeypatch.setattr(gui.logger, "warning", fake_logger_warning)
+
+    # Try to start processing while "running"
+    gui.start_processing()
+
+    # Verify warning was shown
+    assert warning_shown.get('called', False), "Warning dialog should be shown"
+    assert warning_shown.get('title') == "Processing In Progress"
+    assert "already running" in warning_shown.get('message', '').lower()
+
+    # Verify log was called
+    assert log_called.get('called', False), "Logger should be called"
+    assert "already running" in log_called.get('message', '').lower()
+
+    # Cleanup
+    gui._worker_thread = None
 
 # You might want to add a test for the closeEvent behavior if it's critical
 

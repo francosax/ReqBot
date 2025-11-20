@@ -1,1 +1,21 @@
 2025-11-15 17:44:42,043 - ERROR - Incorrect CM template selected: C:\Users\prefa\PycharmProjects\ReqBot\sampleIO\test_output\2025.09.28_Compliance Matrix_Template_based_on_IEEE_Std_830_1998_for.xlsx
+2025-11-17 20:47:19,881 - ERROR - Error processing file C:/Users/prefa/PycharmProjects/ReqBot/sampleIO/Template_based_on_IEEE_Std_830_1998_for.pdf: All arrays must be of the same length
+Traceback (most recent call last):
+  File "C:\Users\prefa\PycharmProjects\ReqBot\processing_worker.py", line 67, in run
+    df = requirement_bot(file_path, self._CM_file, parole_chiave, self._folder_output)
+  File "C:\Users\prefa\PycharmProjects\ReqBot\RB_coordinator.py", line 25, in requirement_bot
+    df = requirement_finder(path_in, words_to_find, filename)
+  File "C:\Users\prefa\PycharmProjects\ReqBot\pdf_analyzer.py", line 343, in requirement_finder
+    df = pd.DataFrame({
+  File "C:\Users\prefa\PycharmProjects\ReqBot\.venv\lib\site-packages\pandas\core\frame.py", line 709, in __init__
+    mgr = dict_to_mgr(data, index, columns, dtype=dtype, copy=copy, typ=manager)
+  File "C:\Users\prefa\PycharmProjects\ReqBot\.venv\lib\site-packages\pandas\core\internals\construction.py", line 481, in dict_to_mgr
+    return arrays_to_mgr(arrays, columns, index, dtype=dtype, typ=typ, consolidate=copy)
+  File "C:\Users\prefa\PycharmProjects\ReqBot\.venv\lib\site-packages\pandas\core\internals\construction.py", line 115, in arrays_to_mgr
+    index = _extract_index(arrays)
+  File "C:\Users\prefa\PycharmProjects\ReqBot\.venv\lib\site-packages\pandas\core\internals\construction.py", line 655, in _extract_index
+    raise ValueError("All arrays must be of the same length")
+ValueError: All arrays must be of the same length
+2025-11-17 23:09:56,532 - ERROR - Incorrect CM template selected: C:\Users\prefa\PycharmProjects\ReqBot\sampleIO\Compliance_Matrix_Template_rev001 - Copia.xlsx
+2025-11-17 23:12:27,067 - ERROR - Incorrect CM template selected: C:\Users\prefa\PycharmProjects\ReqBot\template_compliance_matrix.xlsx
+2025-11-17 23:12:45,716 - ERROR - Incorrect CM template selected: C:\Users\prefa\PycharmProjects\ReqBot\sampleIO\Compliance_Matrix_Template_rev001 - Copia.xlsx
