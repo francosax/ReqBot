@@ -258,7 +258,8 @@ def test_basil_integration():
     print("Status: ✅ INTEGRATION COMPLETE")
     print()
 
-    return 0 if all_passed else 1
+    # Assert all tests passed instead of returning status code
+    assert all_passed, "Some integration tests failed"
 
 
 if __name__ == "__main__":
