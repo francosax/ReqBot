@@ -1,8 +1,8 @@
 # ReqBot TODO List & Future Suggestions
 
 **Last Updated**: 2025-11-19
-**Current Version**: 2.2.0 (Development Baseline)
-**Status**: v2.2 features in development, v3.0 multilingual features merged to main
+**Current Version**: 2.3.0 (Released)
+**Status**: v2.3 Phase 1 complete, v3.0 multilingual features merged to main
 
 This document tracks future enhancements, feature requests, and improvements for ReqBot.
 
@@ -12,14 +12,16 @@ This document tracks future enhancements, feature requests, and improvements for
 
 1. [Immediate Priorities (v2.1)](#immediate-priorities-v21)
 2. [Short-Term Enhancements (v2.2)](#short-term-enhancements-v22)
-3. [Medium-Term Features (v2.5)](#medium-term-features-v25)
-4. [Long-Term Vision (v3.0)](#long-term-vision-v30)
-5. [Technical Debt](#technical-debt)
-6. [Documentation](#documentation)
-7. [Testing](#testing)
-8. [Performance Optimizations](#performance-optimizations)
-9. [User Experience](#user-experience)
-10. [Ideas Backlog](#ideas-backlog)
+3. [Phase 1 Complete (v2.3)](#phase-1-complete-v23)
+4. [Phase 2 Planning (v2.4)](#phase-2-planning-v24)
+5. [Medium-Term Features (v2.5)](#medium-term-features-v25)
+6. [Long-Term Vision (v3.0)](#long-term-vision-v30)
+7. [Technical Debt](#technical-debt)
+8. [Documentation](#documentation)
+9. [Testing](#testing)
+10. [Performance Optimizations](#performance-optimizations)
+11. [User Experience](#user-experience)
+12. [Ideas Backlog](#ideas-backlog)
 
 ---
 
@@ -176,6 +178,74 @@ This document tracks future enhancements, feature requests, and improvements for
   - Start with Italian, German, French
   - Translation files structure
   - **Status**: Deferred to v3.0 - Will be implemented with web-based version
+
+---
+
+## 🎨 Phase 1 Complete (v2.3)
+
+**Target Release**: Q1 2026
+**Focus**: UX & Infrastructure improvements
+**Status**: ✅ **RELEASED** (2025-11-19)
+
+### Features Completed
+
+- [x] **Drag & Drop Support** ✅ **COMPLETED**
+  - Custom DragDropComboBox widget
+  - Folder drag & drop for Input/Output fields
+  - .xlsx file drag & drop for Compliance Matrix
+  - Automatic validation and visual feedback
+  - 11 unit tests + integration test
+
+- [x] **Progress Details Enhancement** ✅ **COMPLETED**
+  - Real-time file processing status
+  - Current step display (analyzing, extracting, etc.)
+  - File counter (e.g., "File 1/3")
+  - Progress detail label in GUI
+  - 6 unit tests + integration test
+
+- [x] **CI/CD Pipeline** ✅ **COMPLETED**
+  - GitHub Actions workflow
+  - Multi-Python version testing (3.9, 3.10, 3.11)
+  - Code quality checks (flake8, black, isort)
+  - Build verification
+  - Coverage reporting to Codecov
+
+**Total Tests**: 280+ tests passing
+**Release Date**: 2025-11-19
+**Codename**: "UX & Infrastructure - Phase 1"
+
+---
+
+## 🧪 Phase 2 Planning (v2.4)
+
+**Target Release**: Q2 2026
+**Focus**: Quality Foundation
+**Status**: 🔜 **PLANNED**
+
+### Proposed Features
+
+- [ ] **Increase Test Coverage to 80%+**
+  - Priority: High
+  - Effort: 1-2 weeks
+  - Focus on: `RB_coordinator.py`, `pdf_analyzer.py`
+  - Integration tests with real PDF samples
+  - Performance and load tests
+
+- [ ] **Additional GUI Polish**
+  - Priority: Medium
+  - Effort: 1 week
+  - Modern UI refinements
+  - Enhanced tooltips and help text
+  - Improved error messages
+  - Better visual feedback
+
+- [ ] **Documentation Improvements**
+  - Priority: Medium
+  - Effort: 3-5 days
+  - Update user manual
+  - Create video tutorials
+  - FAQ document
+  - Configuration guide
 
 ---
 
@@ -486,12 +556,18 @@ This document tracks future enhancements, feature requests, and improvements for
 
 ### Test Infrastructure
 
-- [ ] **Continuous Integration (CI)**
+- [x] **Continuous Integration (CI)** ✅ **COMPLETED**
   - Priority: High
   - Effort: 1-2 days
-  - GitHub Actions workflow
-  - Run tests on push/PR
-  - Multiple OS (Windows, Linux, macOS)
+  - ✅ GitHub Actions workflow configured
+  - ✅ Automated testing on push and pull requests
+  - ✅ Multi-Python version testing (3.9, 3.10, 3.11)
+  - ✅ Code quality checks (flake8, black, isort)
+  - ✅ Build verification
+  - ✅ Coverage reporting to Codecov
+  - Location: `.github/workflows/ci.yml`
+  - **Implementation Date**: 2025-11-19
+  - **Details**: Full CI/CD pipeline with automated testing, linting, and build verification. Runs on ubuntu-latest with Qt system dependencies. Includes pip package caching for faster builds and spaCy model download automation. Three jobs: Test, Lint, Build.
 
 - [ ] **Test Fixtures Library**
   - Priority: Medium
@@ -570,12 +646,17 @@ This document tracks future enhancements, feature requests, and improvements for
   - Better visual hierarchy
   - Icons and imagery
 
-- [ ] **Drag & Drop Support**
+- [x] **Drag & Drop Support** ✅ **COMPLETED**
   - Priority: High
   - Effort: 1-2 days
-  - Drag PDFs into window
-  - Drag folders
-  - Visual feedback
+  - ✅ Drag folders into Input/Output folder fields
+  - ✅ Drag .xlsx files into Compliance Matrix field
+  - ✅ Visual feedback during drag operations
+  - ✅ Automatic file type validation
+  - ✅ Path normalization for cross-platform compatibility
+  - Location: `main_app.py` (DragDropComboBox class)
+  - **Implementation Date**: 2025-11-19
+  - **Details**: Custom DragDropComboBox widget with flexible configuration (accept_files, accept_folders, file_extension). Implements dragEnterEvent and dropEvent handlers with MIME data validation. Input/Output folders accept folders only, CM field accepts .xlsx files only. 11 unit tests added.
 
 - [ ] **Real-Time Preview**
   - Priority: Medium
@@ -584,12 +665,17 @@ This document tracks future enhancements, feature requests, and improvements for
   - Before exporting to Excel
   - Edit/remove before export
 
-- [ ] **Progress Details**
+- [x] **Progress Details** ✅ **COMPLETED**
   - Priority: Medium
   - Effort: 2-3 days
-  - Show current file being processed
-  - Current step (extraction, highlighting, etc.)
-  - Time estimates
+  - ✅ Show current file being processed
+  - ✅ Display current processing step (analyzing, extracting, etc.)
+  - ✅ File counter display (e.g., "File 1/3")
+  - ✅ Progress detail label below progress bar
+  - ✅ Real-time status updates throughout pipeline
+  - Location: `processing_worker.py`, `main_app.py`
+  - **Implementation Date**: 2025-11-19
+  - **Details**: New signal progress_detail_updated(str) emits detailed status messages. GUI displays progress detail label with current file, step, and counter. 7 progress detail emissions throughout processing pipeline. Automatic reset on completion/error/cancel. 6 unit tests added.
 
 - [ ] **Wizard-Style Interface**
   - Priority: Low
@@ -724,16 +810,16 @@ This document tracks future enhancements, feature requests, and improvements for
 Based on current state and user needs, recommended order:
 
 1. ✅ **v2.0 Complete** - NLP improvements done!
-2. 🔜 **Display confidence in Excel** - Users want to see quality scores
-3. 🔜 **Adjustable confidence threshold** - Let users filter
-4. 🔜 **Batch processing** - Frequently requested
-5. 🔜 **OCR support** - Opens up scanned documents
-6. 🔜 **CI/CD setup** - Improve development workflow
-7. 🔜 **Increase test coverage** - Ensure quality
+2. ✅ **v2.1 Complete** - Confidence scores, thresholds, reports, recent projects!
+3. ✅ **v2.2 Complete** - Keyword profiles, categorization, multilingual prep!
+4. ✅ **v2.3 Complete** - Drag & drop, progress details, CI/CD pipeline! (Phase 1)
+5. 🔜 **v2.4** - Increase test coverage to 80%+, additional GUI polish
+6. 🔜 **v2.5** - Parallel PDF processing, OCR support for scanned PDFs
+7. 🔜 **v3.0** - Multi-lingual GUI integration, database backend, web version
 
 ---
 
-**Last Updated**: 2025-11-18
+**Last Updated**: 2025-11-19
 **Maintained By**: Project maintainers
 **Contributions**: Community suggestions welcome!
 
