@@ -184,6 +184,7 @@ class TestRequirementBotSecurity:
 
         assert "invalid file extension" in str(excinfo.value).lower()
 
+    @pytest.mark.skipif(os.name == 'nt', reason="chmod doesn't work the same on Windows")
     def test_non_writable_output_dir_rejected(self, valid_paths, mock_dependencies):
         """Test that non-writable output directory is rejected."""
         from RB_coordinator import requirement_bot

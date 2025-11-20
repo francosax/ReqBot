@@ -227,7 +227,7 @@ class RequirementService:
         def _get(session: Session) -> List[Requirement]:
             query = session.query(Requirement).filter(Requirement.document_id == document_id)
             if current_only:
-                query = query.filter(Requirement.is_current is True)
+                query = query.filter(Requirement.is_current == True)
             return query.order_by(Requirement.page_number, Requirement.label_number).all()
 
         try:
@@ -250,7 +250,7 @@ class RequirementService:
         def _get(session: Session) -> List[Requirement]:
             query = session.query(Requirement).filter(Requirement.project_id == project_id)
             if current_only:
-                query = query.filter(Requirement.is_current is True)
+                query = query.filter(Requirement.is_current == True)
             return query.order_by(Requirement.label_number).all()
 
         try:
@@ -310,7 +310,7 @@ class RequirementService:
             if keyword is not None:
                 query = query.filter(Requirement.keyword == keyword)
             if current_only:
-                query = query.filter(Requirement.is_current is True)
+                query = query.filter(Requirement.is_current == True)
 
             return query.order_by(Requirement.label_number).all()
 
@@ -457,7 +457,7 @@ class RequirementService:
                 func.max(Requirement.confidence_score).label('max_confidence')
             ).filter(
                 Requirement.project_id == project_id,
-                Requirement.is_current is True
+                Requirement.is_current == True
             ).first()
 
             if not stats or stats.total_count == 0:
@@ -469,7 +469,7 @@ class RequirementService:
                 func.count(Requirement.id).label('count')
             ).filter(
                 Requirement.project_id == project_id,
-                Requirement.is_current is True
+                Requirement.is_current == True
             ).group_by(Requirement.priority).all()
 
             # Get counts by category
@@ -478,13 +478,13 @@ class RequirementService:
                 func.count(Requirement.id).label('count')
             ).filter(
                 Requirement.project_id == project_id,
-                Requirement.is_current is True
+                Requirement.is_current == True
             ).group_by(Requirement.category).all()
 
             # Get low confidence count
             low_confidence_count = session.query(func.count(Requirement.id)).filter(
                 Requirement.project_id == project_id,
-                Requirement.is_current is True,
+                Requirement.is_current == True,
                 Requirement.confidence_score < 0.6
             ).scalar()
 
@@ -528,7 +528,7 @@ class RequirementService:
         def _search(session: Session) -> List[Requirement]:
             query = session.query(Requirement).filter(
                 Requirement.description.contains(search_text),
-                Requirement.is_current is True
+                Requirement.is_current == True
             )
 
             if project_id is not None:

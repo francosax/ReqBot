@@ -51,6 +51,10 @@ def preprocess_pdf_text(text):
     Returns:
         str: Cleaned and normalized text ready for NLP processing
     """
+    # Handle None or empty input
+    if text is None or text == "":
+        return ""
+
     # Fix hyphenated words split across lines
     # Example: "require-\nment" -> "requirement"
     text = re.sub(r'(\w+)-\s*\n\s*(\w+)', r'\1\2', text)

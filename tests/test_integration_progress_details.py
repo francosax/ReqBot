@@ -272,7 +272,8 @@ def test_progress_details_integration():
     print("Status: ✅ PROGRESS DETAILS INTEGRATION COMPLETE")
     print()
 
-    return 0 if all_passed else 1
+    # Assert all tests passed instead of returning status code
+    assert all_passed, "Some progress details integration tests failed"
 
 
 if __name__ == "__main__":

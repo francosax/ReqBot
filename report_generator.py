@@ -96,7 +96,8 @@ class ProcessingReport:
                 'min_confidence': 0.0,
                 'max_confidence': 0.0,
                 'total_execution_time': 0.0,
-                'avg_req_per_file': 0.0
+                'avg_req_per_file': 0.0,
+                'estimated_manual_time_hrs': 0.0
             }
 
         total_reqs = sum(f['requirements'] for f in self.files_processed)
@@ -109,6 +110,9 @@ class ProcessingReport:
 
         confidences = [f['avg_confidence'] for f in self.files_processed if f['requirements'] > 0]
 
+        # Calculate estimated manual analysis time (5 minutes per requirement)
+        estimated_manual_time = round(total_reqs * (5 / 60), 2)  # Convert to hours
+
         return {
             'total_files': len(self.files_processed),
             'total_requirements': total_reqs,
@@ -116,7 +120,8 @@ class ProcessingReport:
             'min_confidence': round(min(confidences), 3) if confidences else 0.0,
             'max_confidence': round(max(confidences), 3) if confidences else 0.0,
             'total_execution_time': round(total_time, 2),
-            'avg_req_per_file': round(total_reqs / len(self.files_processed), 1)
+            'avg_req_per_file': round(total_reqs / len(self.files_processed), 1),
+            'estimated_manual_time_hrs': estimated_manual_time
         }
 
     def generate_html_report(self, output_path: str) -> bool:
@@ -457,6 +462,11 @@ class ProcessingReport:
                 <div class="stat-card info">
                     <div class="stat-label">Processing Time</div>
                     <div class="stat-value">{processing_time:.1f}s</div>
+                </div>
+                <div class="stat-card" style="background: white; border-left-color: #764ba2;">
+                    <div class="stat-label">Estimated Time for Manual Analysis</div>
+                    <div class="stat-value">{stats['estimated_manual_time_hrs']:.2f} hrs</div>
+                    <div style="margin-top: 5px; font-size: 0.8em; color: #6c757d;">~{int(stats['estimated_manual_time_hrs'] * 60)} minutes</div>
                 </div>
             </div>
 

@@ -222,13 +222,13 @@ class ProcessingWorker(QObject):
                     f.write("PDF Name: " + os.path.basename(file_path) + "\n")
                     f.write("Number of Requirements: " + str(len(df)) + "\n")
                     f.write("Average Confidence: " + str(round(avg_confidence, 3)) + "\n")
-                    f.write("Estimated Analysis time: " + str(round(len(df) * (5 / 60), 2)) + " hrs" + "\n")
+                    f.write("Estimated time for manual analysis: " + str(round(len(df) * (5 / 60), 2)) + " hrs" + "\n")
                     f.write("Execution Time: " + str(execution_time.total_seconds()) + " seconds\n\n")
 
                 # Write final summary to the log file
                 f.write("--- Summary ---\n")
                 f.write("Total Requirements: " + str(total_requirements) + "\n")
-                f.write("Total Estimated Analysis time: " + str(total_working_time) + " hrs\n")
+                f.write("Total Estimated time for manual analysis: " + str(total_working_time) + " hrs\n")
                 self.log_message.emit(f"Processing loop finished. Total requirements found: {total_requirements}", "info")
 
             # Mark end of processing
