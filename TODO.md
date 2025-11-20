@@ -239,13 +239,12 @@ This document tracks future enhancements, feature requests, and improvements for
   - Improved error messages
   - Better visual feedback
 
-- [ ] **Documentation Improvements**
+- [ ] **Requirements Traceability**
   - Priority: Medium
-  - Effort: 3-5 days
-  - Update user manual
-  - Create video tutorials
-  - FAQ document
-  - Configuration guide
+  - Effort: 2-3 weeks
+  - Link requirements across multiple documents
+  - Track requirement changes over versions
+  - Generate traceability matrix
 
 ---
 
@@ -272,12 +271,13 @@ This document tracks future enhancements, feature requests, and improvements for
   - Include confidence from ML model
   - Technologies: scikit-learn or spaCy's text classifier
 
-- [ ] **Requirements Traceability**
+- [ ] **Documentation Improvements**
   - Priority: Medium
-  - Effort: 2-3 weeks
-  - Link requirements across multiple documents
-  - Track requirement changes over versions
-  - Generate traceability matrix
+  - Effort: 3-5 days
+  - Update user manual
+  - Create video tutorials
+  - FAQ document
+  - Configuration guide
 
 - [ ] **Export to Multiple Formats**
   - Priority: Medium

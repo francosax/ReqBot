@@ -1,8 +1,8 @@
 # CLAUDE.md - AI Assistant Guide for ReqBot
 
 > **Last Updated**: 2025-11-19
-> **Version**: 2.2.0 (Development Baseline - Released)
-> **Status**: v2.2 features in development, v3.0 features merged to main
+> **Version**: 2.3.0 (Released - Phase 1 Complete)
+> **Status**: v2.3 Phase 1 complete (UX & Infrastructure), v3.0 features merged to main
 > **Purpose**: Concise guide for AI assistants working with the ReqBot codebase
 
 ---
@@ -36,6 +36,9 @@
 - **HTML Processing Reports**: Comprehensive extraction reports with statistics (v2.1.1)
 - **Keyword Profiles**: 6 predefined profiles + custom support (v2.2 - merged)
 - **Requirement Categorization**: 9-category auto-classification (v2.2 - merged)
+- **Drag & Drop Support**: Drag folders/files directly into GUI fields (v2.3.0)
+- **Progress Details**: Real-time file and step tracking during processing (v2.3.0)
+- **CI/CD Pipeline**: Automated testing on push/PR with multi-Python support (v2.3.0)
 - **Multi-lingual Support**: Language detection and multi-language NLP (v3.0 - merged)
 - **Database Backend**: SQLAlchemy ORM with full CRUD operations (v3.0 - merged)
 
@@ -79,10 +82,13 @@ ReqBot follows a **three-layer architecture**:
 
 ## Core Modules
 
-### main_app.py (~580 lines)
+### main_app.py (~650 lines)
 **PySide6 GUI application**
 
-**Key Classes**: `QTextEditLogger`, `RequirementBotApp(QWidget)`
+**Key Classes**:
+- `QTextEditLogger` - Custom logger for GUI
+- `DragDropComboBox(QComboBox)` - **v2.3.0**: Custom combo box with drag & drop support
+- `RequirementBotApp(QWidget)` - Main application window
 
 **Critical Methods**:
 - `init_ui()` - Creates GUI with confidence threshold controls (slider + spinbox)
@@ -90,6 +96,7 @@ ReqBot follows a **three-layer architecture**:
 - `cancel_processing()` - Stops processing gracefully
 - `on_processing_finished()` - **v2.1.1**: Properly terminates thread with `quit()` + `wait()`, sets references to `None`
 - `on_processing_error()` - **v2.1.1**: Same thread cleanup for error cases
+- `update_progress_detail()` - **v2.3.0**: Updates progress detail label with current file/step
 
 **Threading Model**: Qt Signal-Slot, QThread for background processing
 
@@ -98,14 +105,33 @@ ReqBot follows a **three-layer architecture**:
 - Recent paths dropdown (last 5 folders/files)
 - **v2.1.1 Fix**: Proper thread cleanup prevents "Processing In Progress" warning after completion
 
+**New in v2.3**:
+- **DragDropComboBox**: Custom widget supporting drag & drop for files and folders
+- **Progress Details**: Real-time display of current file being processed and processing step
+- File type validation (folders only for input/output, .xlsx only for CM)
+- Visual feedback during drag operations
+
 ---
 
-### processing_worker.py (109 lines)
+### processing_worker.py (~150 lines)
 **Background worker for PDF processing**
 
-**Signals**: `progress_updated(int)`, `log_message(str, str)`, `finished(str)`, `error_occurred(str, str)`
+**Signals**:
+- `progress_updated(int)` - Progress percentage (0-100)
+- `progress_detail_updated(str)` - **v2.3.0**: Detailed progress message (file name, step, counter)
+- `log_message(str, str)` - Log messages with level
+- `finished(str)` - Processing completion
+- `error_occurred(str, str)` - Error handling
 
 **Pipeline**: Load keywords → Get PDFs (exclude "Tagged") → Process each → Generate outputs → Create LOG.txt
+
+**v2.3.0 Progress Details**:
+- "Initializing processing..."
+- "Found X PDF file(s) to process"
+- "File N/X: Analyzing filename.pdf..."
+- "File N/X: Extracting requirements from filename.pdf..."
+- "File N/X: Completed filename.pdf (X requirements)"
+- "Generating processing report..."
 
 ---
 
@@ -791,13 +817,14 @@ run_app.py (v2.1.1 - standalone launcher)
 | Version | Date | Status | Changes |
 |---------|------|--------|---------|
 | 3.0.0 | TBD | In Development | Multi-lingual extraction, database backend (features merged to main) |
-| 2.2.0 | 2025-11-18 | **Development Baseline** | Baseline set for v2.2 development. Features in progress: keyword profiles ✅, requirement categorization ✅, search/filter (pending), drag & drop (pending) |
+| 2.3.0 | 2025-11-19 | **Released** | Phase 1 Complete: Drag & Drop support, Progress Details, CI/CD Pipeline (280+ tests) |
+| 2.2.0 | 2025-11-18 | Released | Keyword profiles, requirement categorization (9 categories) |
 | 2.1.1 | 2025-11-18 | Released | Thread cleanup fix, recent projects, HTML reports, confidence threshold UI |
 | 2.1.0 | 2025-11-17 | Released | UX enhancements, confidence scoring, BASIL integration |
 | 2.0.0 | 2025-11-15 | Released | Major NLP improvements, confidence scoring system |
 | 1.x | Previous | Released | Base functionality |
 
-**Note**: v2.2.0 is currently a **development baseline** - the version number is set and some features are merged, but full v2.2.0 release is targeted for Q2 2026. v3.0 features (multilingual, database) have been merged to main branch but not yet integrated into the GUI.
+**Note**: v2.3.0 "UX & Infrastructure - Phase 1" is complete with drag & drop, progress details, and CI/CD pipeline. v3.0 features (multilingual, database) have been merged to main branch but not yet integrated into the GUI. v2.4 (Quality Foundation) planned for Q2 2026.
 
 ---
 
@@ -848,7 +875,7 @@ mypy *.py  # (if type hints added)
 
 ---
 
-**Last Updated**: 2025-11-18
+**Last Updated**: 2025-11-19
 **Maintained By**: Project maintainers
 **AI Assistant Version**: Optimized for Claude Code
 
