@@ -8,10 +8,29 @@ from highlight_requirements import highlight_requirements
 from pdf_analyzer import requirement_finder
 from basil_integration import export_to_basil
 
-# v3.0: Database services
-from database.services.document_service import DocumentService
-from database.services.requirement_service import RequirementService
-from database.models import Priority, ProcessingStatus
+# Security validation (Critical Security Fix)
+from security.path_validator import (
+    PathValidationError,
+    validate_pdf_input,
+    validate_excel_template,
+    validate_directory,
+    validate_output_path,
+    sanitize_path_for_logging
+)
+
+# v3.0: Database services - Optional import
+try:
+    from database.services.document_service import DocumentService
+    from database.services.requirement_service import RequirementService
+    from database.models import Priority, ProcessingStatus
+    DATABASE_AVAILABLE = True
+except ImportError:
+    # Database services not available
+    DocumentService = None
+    RequirementService = None
+    Priority = None
+    ProcessingStatus = None
+    DATABASE_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +38,9 @@ logger = logging.getLogger(__name__)
 def requirement_bot(path_in, cm_path, words_to_find, path_out, confidence_threshold=0.5, project=None):
     """
     Main orchestration function for requirement extraction and processing.
+
+    SECURITY UPDATE: Now includes comprehensive path validation to prevent
+    path traversal attacks and ensure safe file system operations.
 
     Args:
         path_in: Path to input PDF file
@@ -30,24 +52,54 @@ def requirement_bot(path_in, cm_path, words_to_find, path_out, confidence_thresh
 
     Returns:
         DataFrame with extracted requirements
+
+    Raises:
+        PathValidationError: If any path validation fails
+        FileNotFoundError: If required files are not found
+        Exception: For other processing errors
     """
-    # Ottieni data corrente
+    # ========================= PATH VALIDATION (Security Fix) ===============================================
+    # Validate input PDF path
+    try:
+        validated_pdf = validate_pdf_input(path_in)
+        logger.info(f"Processing PDF: {sanitize_path_for_logging(str(validated_pdf))}")
+    except PathValidationError as e:
+        logger.error(f"PDF input validation failed: {str(e)}")
+        raise
+
+    # Validate compliance matrix path
+    try:
+        validated_cm = validate_excel_template(cm_path)
+        logger.info(f"Using CM template: {sanitize_path_for_logging(str(validated_cm))}")
+    except PathValidationError as e:
+        logger.error(f"CM template validation failed: {str(e)}")
+        raise
+
+    # Validate output directory
+    try:
+        validated_output = validate_directory(path_out, must_exist=True, check_writable=True)
+        logger.info(f"Output directory: {sanitize_path_for_logging(str(validated_output))}")
+    except PathValidationError as e:
+        logger.error(f"Output directory validation failed: {str(e)}")
+        raise
+
+    # ========================= FILE NAME PREPARATION ========================================================
+    # Get current date for file naming
     current_date = datetime.today()
     formatted_date = current_date.strftime('%Y.%m.%d')
 
-    filename_path, ext = os.path.splitext(path_in)
+    filename_path, ext = os.path.splitext(str(validated_pdf))
     filename = os.path.basename(filename_path)
-    # print(filename)
-    # folder_path = os.path.dirname(filename_path)
 
+    # ========================= DATABASE OPERATIONS (v3.0) ==================================================
     # v3.0: Create or get document in database
     document = None
-    if project:
+    if project and DATABASE_AVAILABLE and DocumentService:
         try:
             document, is_new = DocumentService.get_or_create_document(
                 project_id=project.id,
-                filename=os.path.basename(path_in),
-                file_path=path_in
+                filename=os.path.basename(str(validated_pdf)),
+                file_path=str(validated_pdf)
             )
             if document:
                 if is_new:
@@ -58,11 +110,12 @@ def requirement_bot(path_in, cm_path, words_to_find, path_out, confidence_thresh
             logger.error(f"Failed to create/retrieve document in database: {str(e)}")
             # Continue processing even if database save fails
 
-    # ========================= ALGORITMO PER TROVARE I REQUISITI =====================================================
-    df = requirement_finder(path_in, words_to_find, filename, confidence_threshold)
+    # ========================= REQUIREMENT EXTRACTION =======================================================
+    df = requirement_finder(str(validated_pdf), words_to_find, filename, confidence_threshold)
 
+    # ========================= DATABASE SAVE (v3.0) ========================================================
     # v3.0: Save requirements to database
-    if project and document and len(df) > 0:
+    if project and document and len(df) > 0 and DATABASE_AVAILABLE and RequirementService:
         try:
             logger.info(f"Saving {len(df)} requirements to database...")
             saved_count = 0
@@ -94,57 +147,94 @@ def requirement_bot(path_in, cm_path, words_to_find, path_out, confidence_thresh
             logger.info(f"Successfully saved {saved_count}/{len(df)} requirements to database")
 
             # Update document status to completed
-            DocumentService.update_processing_status(
-                document_id=document.id,
-                status=ProcessingStatus.COMPLETED,
-                page_count=int(df['Page'].max()) if 'Page' in df.columns else None
-            )
+            if DocumentService and ProcessingStatus:
+                DocumentService.update_processing_status(
+                    document_id=document.id,
+                    status=ProcessingStatus.COMPLETED,
+                    page_count=int(df['Page'].max()) if 'Page' in df.columns else None
+                )
         except Exception as e:
             logger.error(f"Failed to save requirements to database: {str(e)}")
             # Continue processing even if database save fails
 
-    # ==================================================================================================================
-    # ========================= GESTIONE DELLA COMPLIANCE MATRIX ======================================================
-
-    path_cm = cm_path
-    cm_with_extension = os.path.basename(path_cm)
+    # ========================= COMPLIANCE MATRIX GENERATION =================================================
+    cm_with_extension = os.path.basename(str(validated_cm))
     cm_filename, cm_ext = os.path.splitext(cm_with_extension)
-    # cm_folder_path = os.path.dirname(path_cm)
-    new_cm = os.path.join(path_out, formatted_date + '_Compliance Matrix_' + filename + cm_ext)
-    shutil.copy2(path_cm, new_cm)
+    new_cm_path = os.path.join(str(validated_output), formatted_date + '_Compliance Matrix_' + filename + cm_ext)
 
-    write_excel_file(df=df, excel_file=new_cm)
-
-    # ==================================================================================================================
-    # ========================= GESTIONE EXPORT BASIL SPDX 3.0.1 ======================================================
-    basil_output = os.path.join(path_out, formatted_date + '_BASIL_Export_' + filename + '.jsonld')
+    # Validate output path before writing (Security Fix)
     try:
+        validated_cm_output = validate_output_path(
+            new_cm_path,
+            allowed_extensions=['.xlsx', '.XLSX']
+        )
+        shutil.copy2(str(validated_cm), str(validated_cm_output))
+        logger.info(f"Copied CM template to: {sanitize_path_for_logging(str(validated_cm_output))}")
+
+        write_excel_file(df=df, excel_file=str(validated_cm_output))
+        logger.info(f"Excel compliance matrix generated successfully")
+
+    except PathValidationError as e:
+        logger.error(f"Failed to validate CM output path: {str(e)}")
+        raise
+    except Exception as e:
+        logger.error(f"Failed to generate compliance matrix: {str(e)}")
+        raise
+
+    # ========================= BASIL SPDX 3.0.1 EXPORT ======================================================
+    basil_output_path = os.path.join(str(validated_output), formatted_date + '_BASIL_Export_' + filename + '.jsonld')
+
+    # Validate BASIL output path (Security Fix)
+    try:
+        validated_basil = validate_output_path(
+            basil_output_path,
+            allowed_extensions=['.jsonld', '.json']
+        )
+
         export_success = export_to_basil(
             df=df,
-            output_path=basil_output,
+            output_path=str(validated_basil),
             created_by='ReqBot',
             document_name=f'Requirements from {filename}'
         )
         if export_success:
-            logger.info(f"BASIL export created: {basil_output}")
+            logger.info(f"BASIL export created: {sanitize_path_for_logging(str(validated_basil))}")
         else:
             logger.warning(f"BASIL export failed for {filename}")
+
+    except PathValidationError as e:
+        logger.error(f"BASIL output path validation failed: {str(e)}")
+        # Continue processing even if BASIL export fails
     except Exception as e:
         logger.error(f"Error during BASIL export for {filename}: {str(e)}")
         # Continue processing even if BASIL export fails
 
-    # ==================================================================================================================
-    # ========================= GESTIONE DEGLI HIGHLIGHT E NOTE DEL PDF ================================================
-    out_pdf_name = os.path.join(path_out, formatted_date + "_Tagged_" + filename + '.pdf')
-    highlight_requirements(filepath=path_in, requirements_list=list(df['Raw']),
-                           note_list=list(df['Note']), page_list=list(df['Page']), out_pdf_name=out_pdf_name)
-    # ==================================================================================================================
-    return df
+    # ========================= PDF ANNOTATION ===============================================================
+    out_pdf_path = os.path.join(str(validated_output), formatted_date + "_Tagged_" + filename + '.pdf')
 
-# path_in= r"C:/Users/Python/Desktop/Spec_pdf/2023_10_20_Last.pdf"
-# word_set = {'must', 'shall', 'should', 'has to', 'scope', 'recommended', 'ensuring', 'ensures', 'ensure'}
-#
-# cm_path= r"C:/Users/Python/Desktop/Compliance_Matrix_Template_rev001.xlsx"
-# path_out= "C:/Users/Python/Desktop/Spec_pdf/"
-#
-# RequirementBot(path_in,cm_path,word_set,path_out)
+    # Validate PDF output path before annotation (Security Fix)
+    try:
+        validated_pdf_output = validate_output_path(
+            out_pdf_path,
+            allowed_extensions=['.pdf', '.PDF']
+        )
+
+        highlight_requirements(
+            filepath=str(validated_pdf),
+            requirements_list=list(df['Raw']),
+            note_list=list(df['Note']),
+            page_list=list(df['Page']),
+            out_pdf_name=str(validated_pdf_output)
+        )
+        logger.info(f"Annotated PDF created: {sanitize_path_for_logging(str(validated_pdf_output))}")
+
+    except PathValidationError as e:
+        logger.error(f"PDF output path validation failed: {str(e)}")
+        # Continue - don't fail entire process if annotation fails
+    except Exception as e:
+        logger.error(f"Error during PDF annotation for {filename}: {str(e)}")
+        # Continue - don't fail entire process if annotation fails
+
+    # ====================================================================================================
+    logger.info(f"Processing completed successfully for {filename}")
+    return df
